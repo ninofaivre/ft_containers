@@ -6,7 +6,7 @@
 /*   By: nfaivre <nfaivre@student.42.fr>           +#+  +:+       +#+         */
 /*                                               +#+#+#+#+#+   +#+            */
 /*   Created: 2022/08/23 13:13:59 by nfaivre          #+#    #+#              */
-/*   Updated: 2022/08/23 14:59:53 by nfaivre          ###   ########.fr       */
+/*   Updated: 2022/08/23 15:03:00 by nfaivre          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,12 +49,8 @@ namespace ft
 				if (!(this->capacity - this->size))
 				{
 					T	*newData = this->allocator.allocate((capacity) ? capacity * 2 : 1);
-					std::size_t i = 0;
-					while (i < this->size)
-					{
+					for (std::size_t i = 0; i < this->size; i++)
 						newData[i] = data[i];
-						i++;
-					}
 					this->allocator.deallocate(data, capacity);
 					this->data = newData;
 					this->capacity = (capacity) ? capacity * 2 : 1;
