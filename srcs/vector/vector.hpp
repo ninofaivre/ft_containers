@@ -6,7 +6,7 @@
 /*   By: nfaivre <nfaivre@student.42.fr>           +#+  +:+       +#+         */
 /*                                               +#+#+#+#+#+   +#+            */
 /*   Created: 2022/08/23 13:13:59 by nfaivre          #+#    #+#              */
-/*   Updated: 2022/08/23 15:05:37 by nfaivre          ###   ########.fr       */
+/*   Updated: 2022/08/23 15:06:43 by nfaivre          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,7 +41,7 @@ namespace ft
 
 			~vector(void)
 			{
-				this->allocator.deallocate(data, capacity);
+				this->allocator.deallocate(this->data, this->capacity);
 			}
 
 			void	push_back(T val)
