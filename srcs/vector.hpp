@@ -6,13 +6,13 @@
 /*   By: nfaivre <nfaivre@student.42.fr>           +#+  +:+       +#+         */
 /*                                               +#+#+#+#+#+   +#+            */
 /*   Created: 2022/08/23 13:13:59 by nfaivre          #+#    #+#              */
-/*   Updated: 2022/08/25 18:25:46 by nfaivre          ###   ########.fr       */
+/*   Updated: 2022/08/25 23:45:24 by nfaivre          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #pragma once
 
-# include "./utils.hpp"
+# include "utils.hpp"
 
 # include <memory>
 # include <iostream>
@@ -124,7 +124,10 @@ namespace ft
 					return ;
 				value_type	*newData = _allocator.allocate(new_cap);
 				for (size_type i = 0; i < _size; i++)
+				{
 					newData[i] = _data[i];
+					_allocator.destroy(_data + i);
+				}
 				_allocator.deallocate(_data, _capacity);
 				_data = newData;
 				_capacity = new_cap;
@@ -143,20 +146,9 @@ namespace ft
 			}
 
 			void	pop_back(void)
-			{ _size--; }
-
-			// TESTING
-			void	print(void) const
 			{
-				if (!_size)
-				{
-					std::cout << "(null)" << std::endl;
-					return ;
-				}
-				std::cout << '|';
-				for (size_type i = 0; i < _size; i++)
-					std::cout << _data[i] << '|';
-				std::cout << std::endl;
+				_size--;
+				_allocator.destroy(_data + _size);
 			}
 
 	};
