@@ -36,9 +36,8 @@ namespace ft
 		typedef typename allocator_type::pointer			pointer;
 		typedef typename allocator_type::const_pointer		const_pointer;
 
-		class iterator;
-
-		typedef const iterator							const_iterator;
+		typedef ft::iterator<value_type>				iterator;
+		typedef ft::const_iterator<value_type>			const_iterator;
 		typedef std::reverse_iterator<iterator>			reverse_iterator;
 		typedef std::reverse_iterator<const_iterator>	const_reverse_iterator;
 	
@@ -53,100 +52,6 @@ namespace ft
 
 	public:
 
-		class iterator
-		{
-
-		public:
-
-			typedef std::random_access_iterator_tag	iterator_category;
-			typedef std::ptrdiff_t					difference_type;
-			typedef value_type*						pointer;
-			typedef value_type&						reference;
-
-
-		private:
-
-			pointer	_ptr;
-
-		
-		public:
-
-			iterator(pointer ptr)
-			: _ptr(ptr) {}
-
-			bool		operator==(const iterator &otherInst) const
-			{ return (this->_ptr == otherInst->_ptr); }
-
-			bool		operator!=(const iterator &otherInst) const
-			{ return (!(*this == otherInst)); }
-
-			reference	operator*(void) const
-			{ return (*_ptr); }
-
-			pointer		operator->(void) 
-			{ return (_ptr); }
-
-			iterator	&operator++(void)
-			{
-				_ptr++;
-				return (*this);
-			}
-
-			iterator	operator++(int)
-			{
-				iterator tmp = *this;
-				++(*this);
-				return (tmp);
-			}
-
-			iterator	&operator--(void)
-			{
-				_ptr--;
-				return (*this);
-			}
-
-			iterator	operator--(int)
-			{
-				iterator tmp = *this;
-				--(*this);
-				return (tmp);
-			}
-
-			iterator	operator+(int n) const
-			{ return (iterator(_ptr + n)); }
-
-			iterator	operator-(int n) const
-			{ return (iterator(_ptr - n)); }
-
-			bool		operator<(const iterator &otherInst) const
-			{ return (*this < *otherInst); }
-
-			bool		operator>(const iterator &otherInst) const 
-			{ return (*this > *otherInst); }
-
-			bool		operator<=(const iterator &otherInst) const
-			{ return (*this <= *otherInst); }
-
-			bool		operator>=(const iterator &otherInst) const
-			{ return (*this >= *otherInst); }
-
-			iterator	&operator+=(int n)
-			{
-				*this += n;
-				return (*this);
-			}
-
-			iterator	&operator-=(int n)
-			{
-				*this -= n;
-				return (*this);
-			}
-
-			value_type	&operator[](int index)
-			{ return (*this[index]); }
-
-		};
-
 		// Member Functions
 		explicit vector(const allocator_type	&alloc = allocator_type ())
 		: _allocator(alloc), _data(NULL), _size(0), _capacity(0) {}
@@ -159,12 +64,44 @@ namespace ft
 				_allocator.construct(_data + i, val);
 		}
 
+		vector(const vector &cpy)
+		: _allocator(cpy._allocator), _data(NULL), _size(0), _capacity(0)
+		{
+			this->reserve(cpy._capacity);
+			for (size_type i = 0; i < cpy._size; i++)
+				this->push_back(cpy[i]);
+		}
+
 		~vector(void)
 		{
 			for (size_type i = 0; i < _size; i++)
 				_allocator.destroy(_data + i);
 			_allocator.deallocate(_data, _capacity);
 		}
+
+		// Operators
+		bool	operator==(const vector &otherInst) const
+		{
+			if (_size != otherInst._size)
+				return (false);
+			return (ft::equal(this->begin(), this->end(), otherInst.begin()));
+		}
+
+		bool	operator!=(const vector &otherInst) const
+		{ return (!(*this == otherInst)); }
+
+		bool	operator<(const vector &otherInst) const
+		{ return (ft::lexicographical_compare(this->begin(), this->end(),
+											  otherInst.begin(), otherInst.end())); }
+
+		bool	operator<=(const vector &otherInst) const
+		{ return (*this == otherInst || *this < otherInst); }
+
+		bool	operator>(const vector &otherInst) const
+		{ return (!(*this <= otherInst)); }
+
+		bool	operator>=(const vector &otherInst) const
+		{ return (!(*this < otherInst)); }
 
 		allocator_type	get_allocator(void) const
 		{ return (_allocator); }
@@ -216,7 +153,7 @@ namespace ft
 		{ return (_size); }
 
 		size_type	max_size(void) const
-		{ return (std::numeric_limits<difference_type>::max()); }
+		{ return (_allocator.max_size()); }
 
 		void	reserve(size_type new_cap)
 		{
@@ -252,19 +189,29 @@ namespace ft
 		}
 
 		// iterators
-		iterator	begin(void)
-		{
-			return (iterator (this->_data));
-		}
+		iterator		begin(void)
+		{ return (iterator (_data)); }
 
-		iterator	end(void)
+		const_iterator	begin(void) const
+		{ return (const_iterator (_data)); }
+
+		iterator		end(void)
 		{ return (iterator (&_data[_size])); }
 
-		reverse_iterator	rbegin(void) const
+		const_iterator	end(void) const
+		{ return (const_iterator (&_data[_size])); }
+
+		reverse_iterator	rbegin(void)
 		{ return (reverse_iterator (&_data[_size - 1])); }
 
-		reverse_iterator	rend(void) const
+		const_reverse_iterator	rbegin(void) const
+		{ return (const_reverse_iterator (&_data[_size - 1])); }
+
+		reverse_iterator	rend(void)
 		{ return  (reverse_iterator (&_data[-1])); }
+
+		const_reverse_iterator	rend(void) const
+		{ return  (const_reverse_iterator (&_data[-1])); }
 
 	};
 }

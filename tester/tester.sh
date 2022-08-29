@@ -22,9 +22,9 @@ valgrindOptions=("--track-origins=yes" "-s")
 
 function	compil()
 {
-	echo "\"make ${1}\" :" > outputs/compiling.output
+	echo "\"make $1 $2\" :" > outputs/compiling.output
 	# shellcheck disable=SC2086
-	if ! make $1 >> outputs/compiling.output 2>&1; then
+	if ! make $1 $2 >> outputs/compiling.output 2>&1; then
 		echo -e "${C_RED}Compilation Failed !${C_RESET}"
 		echo -e "output saved in ./outputs/compiling.output"
 		exit 1
@@ -41,7 +41,7 @@ echo -e "all executions outputs saved at ./outputs/[namespace]_[container]/[test
 
 function	anonymiserOutput()
 {
-	output=$(valgrind "${valgrindOptions[@]}" ./.exec/"$1"_vector/"$2" 2>&1)
+	output=$(valgrind ${valgrindOptions[@]} ./.exec/"$1"_vector/"$2" 2>&1)
 	output=$(echo "$output" | sed -e "s/$1/namespace/g" | sed -e "s/^==.....==.//")	
 	echo "$output" > outputs/"$1"_vector/"$2".output
 	return $(( $(echo "$output" | awk 'END { print $3 }') != 0 ))
