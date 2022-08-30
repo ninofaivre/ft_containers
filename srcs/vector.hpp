@@ -74,12 +74,10 @@ namespace ft
 
 		~vector(void)
 		{
-			/*
 			for (size_type i = 0; i < _size; i++)
 				_allocator.destroy(_data + i);
 			_allocator.deallocate(_data, _capacity);
-			*/
-		}
+	}
 
 		// Operators
 
