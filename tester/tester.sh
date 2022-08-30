@@ -42,7 +42,10 @@ echo -e "all executions outputs saved at ./outputs/[namespace]_[container]/[test
 function	anonymiserOutput()
 {
 	output=$(valgrind ${valgrindOptions[@]} ./.exec/"$1"_vector/"$2" 2>&1)
+	output=$(echo "$output" | sed -e "s/$1/namespace/g" | sed -e "s/^==...==.//")	
+	output=$(echo "$output" | sed -e "s/$1/namespace/g" | sed -e "s/^==....==.//")	
 	output=$(echo "$output" | sed -e "s/$1/namespace/g" | sed -e "s/^==.....==.//")	
+	output=$(echo "$output" | sed -e "s/$1/namespace/g" | sed -e "s/^==......==.//")	
 	echo "$output" > outputs/"$1"_vector/"$2".output
 	return $(( $(echo "$output" | awk 'END { print $3 }') != 0 ))
 }

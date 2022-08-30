@@ -96,8 +96,14 @@ namespace ft
 		iterator<value_type>	operator+(const int n) const
 		{ return (iterator<value_type> (_ptr + n)); }
 
+		difference_type	operator+(const iterator<value_type> &otherInst) const
+		{ return(_ptr + otherInst._ptr); }
+
 		iterator<value_type>	operator-(const int n) const
 		{ return (iterator<value_type> (_ptr - n)); }
+
+		difference_type	operator-(const iterator<value_type> &otherInst) const
+		{ return(_ptr - otherInst._ptr); }
 
 		bool					operator<(const iterator<value_type> &otherInst) const
 		{ return (_ptr < otherInst._ptr); }
@@ -198,8 +204,14 @@ namespace ft
 		const_iterator<T>	operator+(const int n) const
 		{ return (const_iterator<T> (_ptr + n)); }
 
+		difference_type	operator+(const const_iterator<T> &otherInst) const
+		{ return (_ptr + otherInst._ptr); }
+
 		const_iterator<T>	operator-(const int n) const
 		{ return (const_iterator<T> (_ptr - n)); }
+
+		difference_type	operator-(const const_iterator<T> &otherInst) const
+		{ return (_ptr - otherInst._ptr); }
 
 		bool					operator<(const const_iterator<T> &otherInst) const
 		{ return (_ptr < otherInst._ptr); }
@@ -254,8 +266,8 @@ namespace ft
 	}
 
 	template<class InputIt1, class InputIt2>
-	bool	lexicographical_compare (InputIt1 first1, InputIt1 last1,
-									 InputIt2 first2, InputIt2 last2)
+	bool	lexicographical_compare(InputIt1 first1, InputIt1 last1,
+									InputIt2 first2, InputIt2 last2)
 	{
 		while (first1 != last1 && first2 != last2)
 		{
@@ -268,9 +280,9 @@ namespace ft
 	}
 
 	template<class InputIt1, class InputIt2, class Compare>
-	bool	lexicographical_compare (InputIt1 first1, InputIt1 last1,
-									 InputIt2 first2, InputIt2 last2,
-									 Compare comp)
+	bool	lexicographical_compare(InputIt1 first1, InputIt1 last1,
+									InputIt2 first2, InputIt2 last2,
+									Compare comp)
 	{
 		while (first1 != last1 && first2 != last2)
 		{
@@ -280,5 +292,13 @@ namespace ft
 				return (false);
 		}
 		return(first1 == last1 && first2 != last2);
+	}
+
+	template<class T>
+	void	swap(T &a, T &b)
+	{
+		T	tmp = a;
+		a = b;
+		b = tmp;
 	}
 }

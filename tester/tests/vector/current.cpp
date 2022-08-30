@@ -1,26 +1,16 @@
 #include "vector.hpp"
 
 #include <iostream>
+#include <string>
+#include <vector>
 
 int	main(void)
 {
-	ft::vector<int>	test;
-
-	test.push_back(21);
-	test.push_back(42);
-	test.push_back(84);
-	test.push_back(168);
-
-	ft::vector<int>::iterator it = test.begin();
-	ft::vector<int>::const_iterator cit = it;
-	std::cout << *it << std::endl
-			  << *cit << std::endl;
-	++it;
-	++cit;
-	std::cout << *it << std::endl
-			  << *cit << std::endl;
-	*it = 9;
-	std::cout << *it << std::endl
-			  << *cit << std::endl;
+	NAMESPACE::vector<std::string>	vct(10);
+	for (unsigned long int i = 0; i < vct.size(); i++)
+		vct[i] = std::string(vct.size() - i, i + 65);
+	NAMESPACE::vector<std::string>::const_iterator const it;
+	it = vct.erase(vct.begin());
+	std::cout << it - vct.begin() << std::endl;
 	return (0);
 }

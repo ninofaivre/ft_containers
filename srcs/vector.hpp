@@ -74,12 +74,24 @@ namespace ft
 
 		~vector(void)
 		{
+			/*
 			for (size_type i = 0; i < _size; i++)
 				_allocator.destroy(_data + i);
 			_allocator.deallocate(_data, _capacity);
+			*/
 		}
 
 		// Operators
+
+		vector	&operator=(const vector &cpy)
+		{
+			_allocator = cpy._allocator;
+			this->reserve(cpy._capacity);
+			for (size_type i = 0; i < cpy._size; i++)
+				this->push_back(cpy[i]);
+			return (*this);
+		}
+
 		bool	operator==(const vector &otherInst) const
 		{
 			if (_size != otherInst._size)
@@ -110,14 +122,14 @@ namespace ft
 		reference	at(size_type pos)
 		{
 			if (!(pos < _size))
-				throw std::out_of_range(std::string("vector::_M_range_check: __n (which is ") + std::to_string(pos) + std::string(") >= this->size() (which is 0)"));	
+				throw std::out_of_range(std::string("vector::_M_range_check: __n (which is ") + std::to_string(pos) + std::string(") >= this->size() (which is " + std::to_string(pos) + ")"));
 			return (_data[pos]);
 		}
 
 		const_reference	at(size_type pos) const
 		{
 			if (!(pos < _size))
-				throw std::out_of_range(std::string("vector::_M_range_check: __n (which is ") + std::to_string(pos) + std::string(") >= this->size() (which is 0)"));	
+				throw std::out_of_range(std::string("vector::_M_range_check: __n (which is ") + std::to_string(pos) + std::string(") >= this->size() (which is " + std::to_string(pos) + ")"));	
 			return (_data[pos]);
 		}
 
@@ -147,7 +159,7 @@ namespace ft
 
 		// Capacity
 		bool	empty(void) const
-		{ return (_size != 0); }
+		{ return (_size == 0); }
 
 		size_type	size(void) const
 		{ return (_size); }
@@ -159,6 +171,8 @@ namespace ft
 		{
 			if (new_cap < _capacity)
 				return ;
+			if (new_cap > this->max_size())
+				throw std::length_error("vector::reserve");
 			value_type	*newData = _allocator.allocate(new_cap);
 			for (size_type i = 0; i < _size; i++)
 			{
@@ -174,6 +188,42 @@ namespace ft
 		{ return (_capacity); }
 
 		// Modifiers
+
+		void	swap(vector &otherInst)
+		{
+			ft::swap<allocator_type>(_allocator, otherInst._allocator);
+			ft::swap<pointer>(_data, otherInst._data);
+			ft::swap<size_type>(_size, otherInst._size);
+			ft::swap<size_type>(_capacity, otherInst._capacity);
+		}
+
+		void	clear(void)
+		{ this->erase(this->begin(), this->end); }
+
+		iterator		erase(iterator pos)
+		{
+			if (!_size || pos >= this->end())
+				return (this->end());
+			_allocator.destroy(pos.operator->());
+			for (iterator cpyPos = pos + 1; cpyPos != this->end(); cpyPos++)
+				*(cpyPos - 1) = *cpyPos;
+			_size--;
+			return (pos);
+		}
+
+		iterator	erase(iterator first, iterator last)
+		{
+			if (!_size || first >= this->end() || first >= last)
+				return (this->end());
+			iterator oldEnd = this->end();
+			for (iterator cpyFirst = first; cpyFirst != last && cpyFirst != oldEnd;
+				 _size--, cpyFirst++)
+				_allocator.destroy(cpyFirst.operator->());
+			for (iterator cpyFirst = first; last < oldEnd; cpyFirst++, last++)
+				 *cpyFirst = *last;
+			return (first);
+		}
+
 		void	push_back(value_type val)
 		{
 			if (!(_capacity - _size))
@@ -186,6 +236,19 @@ namespace ft
 		{
 			_size--;
 			_allocator.destroy(_data + _size);
+		}
+
+		void	resize(size_type count, const value_type &value = value_type ())
+		{
+			if (count < _size)
+				this->erase((this->begin() + count), this->end());
+			else if (count > _size)
+			{
+				this->reserve(count);
+				for (size_type i = 0; i < (count - _size); i++)
+					_allocator.construct((this->end() + i).operator->(), value);
+				_size = count;
+			}
 		}
 
 		// iterators
@@ -214,4 +277,8 @@ namespace ft
 		{ return  (const_reverse_iterator (&_data[-1])); }
 
 	};
+
+	template<class T, class Alloc>
+	void	swap(vector<T, Alloc> &a, vector<T, Alloc> &b)
+	{ a.swap(b); }
 }
