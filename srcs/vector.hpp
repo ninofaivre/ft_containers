@@ -56,12 +56,23 @@ namespace ft
 		explicit vector(const allocator_type	&alloc = allocator_type ())
 		: _allocator(alloc), _data(NULL), _size(0), _capacity(0) {}
 
-		explicit vector(size_type n, const value_type &val = value_type (), const allocator_type &alloc = allocator_type ())
+		explicit vector(size_type n, const value_type &val = value_type (),
+						const allocator_type &alloc = allocator_type ())
 		: _allocator(alloc), _size(n), _capacity(n)
 		{
-			_data = n ? _allocator.allocate(n) : NULL;
-			for (size_type i = 0; i < n; i++)
+			_data = _size ? _allocator.allocate(_size) : NULL;
+			for (size_type i = 0; i < _size; i++)
 				_allocator.construct(_data + i, val);
+		}
+
+		template<class InputIt>
+		vector(typename ft::enable_if<!std::numeric_limits<InputIt>::is_integer, InputIt>::type first,
+			   InputIt last, const allocator_type &alloc = allocator_type ())
+		: _allocator(alloc), _size(last - first), _capacity(last - first)
+		{
+			_data = _size ? _allocator.allocate(_size) : NULL;
+			for (size_type i = 0; i < _size; i++, first++)
+				_allocator.construct(_data + i, *first);
 		}
 
 		vector(const vector &cpy)
@@ -77,16 +88,32 @@ namespace ft
 			for (size_type i = 0; i < _size; i++)
 				_allocator.destroy(_data + i);
 			_allocator.deallocate(_data, _capacity);
-	}
+		}
+
+		void	assign(size_type count, const value_type &value)
+		{
+			this->clear();
+			this->reserve(count);
+			for (size_type i = 0; i < count; i++)
+				_allocator.construct(_data + i, value);
+			_size = count;
+		}
+
+		template <class InputIt>
+		void	assign(typename ft::enable_if<!std::numeric_limits<InputIt>::is_integer, InputIt>::type first, InputIt last)
+		{
+			this->clear();
+			this->reserve(last - first);
+			_size = last - first;
+			for (size_type i = 0; first != last; i++, first++)
+				_allocator.construct(_data + i, *first);
+		}
 
 		// Operators
 
 		vector	&operator=(const vector &cpy)
 		{
-			_allocator = cpy._allocator;
-			this->reserve(cpy._capacity);
-			for (size_type i = 0; i < cpy._size; i++)
-				this->push_back(cpy[i]);
+			this->assign(cpy.begin(), cpy.end());
 			return (*this);
 		}
 
@@ -196,7 +223,7 @@ namespace ft
 		}
 
 		void	clear(void)
-		{ this->erase(this->begin(), this->end); }
+		{ this->erase(this->begin(), this->end()); }
 
 		iterator		erase(iterator pos)
 		{
