@@ -15,7 +15,7 @@
 # include <string>
 # include <sstream>
 
-namespace std
+namespace ft
 {
 	template <typename T>
 	std::string	to_string(T value)
@@ -25,222 +25,6 @@ namespace std
 		stream << value;
 		return (stream.str());
 	}
-}
-
-namespace ft
-{
-	template<typename T>
-	class iterator
-	{
-
-	public:
-
-		typedef std::random_access_iterator_tag	iterator_category;
-
-		typedef	T				value_type;
-		typedef std::ptrdiff_t	difference_type;
-		typedef value_type*		pointer;
-		typedef value_type&		reference;
-	
-	private:
-
-		pointer	_ptr;
-	
-
-	public:
-	
-		iterator<value_type>(pointer ptr)
-		: _ptr(ptr) {}
-
-		iterator<value_type>(const iterator<value_type> &cpy)
-		: _ptr(cpy._ptr) {}
-
-		bool		operator==(const iterator<value_type> &otherInst) const
-		{ return (_ptr == otherInst._ptr); }
-
-		bool		operator!=(const iterator<value_type> &otherInst) const
-		{ return (_ptr != otherInst._ptr); }
-
-		reference	operator*(void) const
-		{ return (*_ptr); }
-
-		pointer		operator->(void) const
-		{ return (_ptr); }
-
-		iterator<value_type>	&operator++(void)
-		{
-			_ptr++;
-			return (*this);
-		}
-
-		iterator<value_type>	operator++(int)
-		{
-			iterator<value_type> tmp = *this;
-			++_ptr;
-			return (tmp);
-		}
-
-		iterator<value_type>	&operator--(void)
-		{
-			_ptr--;
-			return (*this);
-		}
-
-		iterator<value_type>	operator--(int)
-		{
-			iterator<value_type> tmp = *this;
-			--_ptr;
-			return (tmp);
-		}
-
-		iterator<value_type>	operator+(const int n) const
-		{ return (iterator<value_type> (_ptr + n)); }
-
-		difference_type	operator+(const iterator<value_type> &otherInst) const
-		{ return(_ptr + otherInst._ptr); }
-
-		iterator<value_type>	operator-(const int n) const
-		{ return (iterator<value_type> (_ptr - n)); }
-
-		difference_type	operator-(const iterator<value_type> &otherInst) const
-		{ return(_ptr - otherInst._ptr); }
-
-		bool					operator<(const iterator<value_type> &otherInst) const
-		{ return (_ptr < otherInst._ptr); }
-
-		bool					operator>(const iterator<value_type> &otherInst) const
-		{ return (_ptr > otherInst._ptr); }
-
-		bool					operator<=(const iterator<value_type> &otherInst) const
-		{ return (_ptr <= otherInst._ptr); }
-
-		bool					operator>=(const iterator<value_type> &otherInst) const
-		{ return (_ptr >= otherInst._ptr); }
-
-		iterator<value_type>	&operator+=(const int n) const
-		{
-			_ptr += n;
-			return (*this);
-		}
-
-		iterator<value_type>	&operator-=(const int n) const
-		{
-			_ptr -= n;
-			return (*this);
-		}
-
-		reference				operator[](std::size_t index)
-		{ return (_ptr[index]); }
-
-	};
-
-	template<typename T>
-	class const_iterator
-	{
-
-	public:
-
-		typedef std::random_access_iterator_tag	iterator_category;
-
-		typedef	const T			value_type;
-		typedef std::ptrdiff_t	difference_type;
-		typedef value_type*		pointer;
-		typedef value_type&		reference;
-	
-	private:
-
-		pointer	_ptr;
-	
-
-	public:
-	
-		const_iterator<T>(pointer ptr)
-		: _ptr(ptr) {}
-
-		const_iterator<T>(const const_iterator<T> &cpy)
-		: _ptr(cpy._ptr) {}
-
-		const_iterator<T>(const iterator<T> &cpy)
-		: _ptr(&(*cpy)) {}
-
-		bool		operator==(const const_iterator<T> &otherInst) const
-		{ return (_ptr == otherInst._ptr); }
-
-		bool		operator!=(const const_iterator<T> &otherInst) const
-		{ return (_ptr != otherInst._ptr); }
-
-		reference	operator*(void) const
-		{ return (*_ptr); }
-
-		pointer		operator->(void) const
-		{ return (_ptr); }
-
-		const_iterator<T>	&operator++(void)
-		{
-			_ptr++;
-			return (*this);
-		}
-
-		const_iterator<T>	operator++(int)
-		{
-			const_iterator<T> tmp = *this;
-			++_ptr;
-			return (tmp);
-		}
-
-		const_iterator<T>	&operator--(void)
-		{
-			_ptr--;
-			return (*this);
-		}
-
-		const_iterator<T>	operator--(int)
-		{
-			const_iterator<T> tmp = *this;
-			--_ptr;
-			return (tmp);
-		}
-
-		const_iterator<T>	operator+(const int n) const
-		{ return (const_iterator<T> (_ptr + n)); }
-
-		difference_type	operator+(const const_iterator<T> &otherInst) const
-		{ return (_ptr + otherInst._ptr); }
-
-		const_iterator<T>	operator-(const int n) const
-		{ return (const_iterator<T> (_ptr - n)); }
-
-		difference_type	operator-(const const_iterator<T> &otherInst) const
-		{ return (_ptr - otherInst._ptr); }
-
-		bool					operator<(const const_iterator<T> &otherInst) const
-		{ return (_ptr < otherInst._ptr); }
-
-		bool					operator>(const const_iterator<T> &otherInst) const
-		{ return (_ptr > otherInst._ptr); }
-
-		bool					operator<=(const const_iterator<T> &otherInst) const
-		{ return (_ptr <= otherInst._ptr); }
-
-		bool					operator>=(const const_iterator<T> &otherInst) const
-		{ return (_ptr >= otherInst._ptr); }
-
-		const_iterator<T>	&operator+=(const int n) const
-		{
-			_ptr += n;
-			return (*this);
-		}
-
-		const_iterator<T>	&operator-=(const int n) const
-		{
-			_ptr -= n;
-			return (*this);
-		}
-
-		reference				operator[](std::size_t index)
-		{ return (_ptr[index]); }
-
-	};
 
 	template<class InputIt1, class InputIt2>
 	bool	equal(InputIt1 first1, InputIt1 last1, InputIt2 first2)
@@ -307,5 +91,15 @@ namespace ft
 
 	template<class T>
 	struct enable_if<true, T> { typedef T type; };
+
+	template<class InputIt>
+	typename std::iterator_traits<InputIt>::difference_type	distance(InputIt first,
+																	 InputIt last)
+	{
+		typename std::iterator_traits<InputIt>::difference_type	diff = 0;
+		while (first++ != last)
+			diff++;
+		return (diff);
+	}
 }
 	
