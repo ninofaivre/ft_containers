@@ -92,21 +92,34 @@ namespace ft
 		return (diff);
 	}
 
-	template<class T>
-	struct is_integral{ static const bool	value = false; };
+	template<class T, T v>
+	struct integral_constant
+	{
+		typedef T						value_type;
+		typedef integral_constant<T, v>	type;
+		static const value_type	value = v;
+		operator T() { return (v); }
+	};
 
-	template<>
-	struct is_integral<bool>{ static const bool	value = true; };
+	typedef integral_constant<bool, false>	false_type;
+	typedef integral_constant<bool, true>	true_type;
 
-	template<>
-	struct is_integral<int>{ static const bool	value = true; };
+	template<class T> struct is_integral : false_type {};
+	template<class T> struct is_integral<const T> : is_integral<T> {};
+	template<class T> struct is_integral<volatile T> : is_integral<T> {};
+	template<class T> struct is_integral<const volatile T> : is_integral<T> {};
 
-	template<>
-	struct is_integral<long int>{ static const bool	value = true; };
-
-	template<>
-	struct is_integral<unsigned int>{ static const bool	value = true; };
-
-	template<>
-	struct is_integral<unsigned long int>{ static const bool	value = true; };
+	template<> struct is_integral<bool> : true_type {};
+	template<> struct is_integral<short int> : true_type {};
+	template<> struct is_integral<unsigned short int> : true_type {};
+	template<> struct is_integral<int> : true_type {};
+	template<> struct is_integral<unsigned int> : true_type {};
+	template<> struct is_integral<long int> : true_type {};
+	template<> struct is_integral<unsigned long int> : true_type {};
+	template<> struct is_integral<long long int> : true_type {};
+	template<> struct is_integral<unsigned long long int> : true_type {};
+	template<> struct is_integral<char> : true_type {};
+	template<> struct is_integral<wchar_t> : true_type {};
+	template<> struct is_integral<signed char> : true_type {};
+	template<> struct is_integral<unsigned char> : true_type {};
 }

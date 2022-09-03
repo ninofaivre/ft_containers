@@ -21,7 +21,7 @@
 # include <iostream>
 # include <limits>
 
-# define VIterator typename ft::enable_if<!std::numeric_limits<InputIt>::is_integer, InputIt>::type
+# define VIterator typename ft::enable_if<!ft::is_integral<InputIt>::value, InputIt>::type
 
 template<class T>
 class vectorIterator;
