@@ -1,6 +1,7 @@
 ### GLOBAL ###
 
 .DEFAULT_GOAL = all
+MAKE ?= make
 
 CXX = c++
 CXXFLAGS ?= -Wall -Wextra -Werror -std=c++98
@@ -9,6 +10,11 @@ DIR_SRC = ./tests
 DIR_OUTPUTS = ./outputs
 DIR_INCLUDE ?= ../srcs
 namespace ?= std
+ifeq ($(namespace), std)
+	rev_namespace = ft
+else
+	rev_namespace = std
+endif
 DIR_EXEC = ./.exec
 
 INCLUDE = -I$(DIR_INCLUDE)
@@ -23,40 +29,81 @@ $(DIR_OUTPUTS)/%:
 
 ### VECTOR ###
 
-SRC_VECTOR = $(wildcard $(DIR_SRC)/*/*.cpp)
-EXEC_VECTOR = $(addprefix $(DIR_EXEC)/$(namespace)_vector/, $(notdir $(SRC_VECTOR:.cpp=)))
-DIR_VECTOR = $(DIR_EXEC)/$(namespace)_vector $(DIR_OUTPUTS)/$(namespace)_vector
+VecDirName = $(namespace)_vector
+VecSrc = $(wildcard $(DIR_SRC)/vector/*.cpp)
+VecExec = $(addprefix $(DIR_EXEC)/$(VecDirName)/, $(notdir $(VecSrc:.cpp=)))
+VecDir = $(DIR_EXEC)/$(VecDirName) $(DIR_OUTPUTS)/$(VecDirName)
 
-$(DIR_EXEC)/$(namespace)_vector/% : $(DIR_SRC)/vector/%.cpp
+$(DIR_EXEC)/$(VecDirName)/% : $(DIR_SRC)/vector/%.cpp
 	- $(CXX) $(CXXFLAGS) $< $(INCLUDE) -D NAMESPACE=$(namespace) -o $@\
-		2> $(DIR_OUTPUTS)/$(namespace)_vector/$(notdir $@).output
+		2> $(DIR_OUTPUTS)/$(VecDirName)/$(notdir $@).output
 
-$$(DIR_VECTOR):
+$$(VecDir):
 
-vector: $(DIR_VECTOR) $(EXEC_VECTOR)
+vector: $(VecDir) $(VecExec)
 
 ### VECTOR ###
 
+### STACK ###
+
+StackDirName = $(namespace)_stack
+StackSrc = $(wildcard $(DIR_SRC)/stack/*.cpp)
+StackExec = $(addprefix $(DIR_EXEC)/$(StackDirName)/, $(notdir $(StackSrc:.cpp=)))
+StackDir = $(DIR_EXEC)/$(StackDirName) $(DIR_OUTPUTS)/$(StackDirName)
+
+$(DIR_EXEC)/$(StackDirName)/% : $(DIR_SRC)/stack/%.cpp
+	- $(CXX) $(CXXFLAGS) $< $(INCLUDE) -D NAMESPACE=$(namespace) -o $@\
+		2> $(DIR_OUTPUTS)/$(StackDirName)/$(notdir $@).output
+
+$$(StackDir):
+
+stack: $(StackDir) $(StackExec)
+
+### STACK ###
+
+### MAP ###
+
+MapDirName = $(namespace)_map
+MapSrc = $(wildcard $(DIR_SRC)/map/*.cpp)
+MapExec = $(addprefix $(DIR_EXEC)/$(MapDirName)/, $(notdir $(MapSrc:.cpp=)))
+MapDir = $(DIR_EXEC)/$(MapDirName) $(DIR_OUTPUTS)/$(MapDirName)
+
+$(DIR_EXEC)/$(MapDirName)/% : $(DIR_SRC)/map/%.cpp
+	- $(CXX) $(CXXFLAGS) $< $(INCLUDE) -D NAMESPACE=$(namespace) -o $@\
+		2> $(DIR_OUTPUTS)/$(MapDirName)/$(notdir $@).output
+
+$$(MapDir):
+
+map: $(MapDir) $(MapExec)
+
+### MAP ###
+
 ### BASE ###
 
-all: vector
+all: vector stack map
 
-clean:
-	rm -f $(DIR_OUTPUTS)/*/*.output
+softClean:
+	rm -f $(DIR_OUTPUTS)/$(VecDirName)/*.output
+	rm -f $(DIR_OUTPUTS)/$(StackDirName)/*.output
+	rm -f $(DIR_OUTPUTS)/$(MapDirName)/*.output
+	-@ "$(MAKE)" softClean namespace="$(rev_namespace)" MAKE="don't loop" 2>/dev/null
+
+clean: softClean
+	rm -f $(VecExec)
+	rm -f $(StackExec)
+	rm -f $(MapExec)
+	-@ "$(MAKE)" clean namespace="$(rev_namespace)" MAKE="don't loop" 2>/dev/null
 
 fclean: clean
-	$(eval namespace=std)
-	rm -rf $(EXEC_VECTOR)
-	rm -rf $(DIR_VECTOR)
-	$(eval namespace=ft)
-	rm -rf $(EXEC_VECTOR)
-	rm -rf $(DIR_VECTOR)
-	# not namespace related :
+	rm -rf $(VecDir)
+	rm -rf $(StackDir)
+	rm -rf $(MapDir)
 	rm -rf $(DIR_EXEC)
 	rm -rf $(DIR_OUTPUTS)
+	-@ "$(MAKE)" fclean namespace="$(rev_namespace)" MAKE="don't loop" 2>/dev/null
 
 re: fclean all
 
-.PHONY: all clean fclean re
+.PHONY: all vector stack map softClean clean fclean re
 
 ### BASE ###
