@@ -82,11 +82,14 @@ namespace ft
 	template<class T>
 	struct enable_if<true, T> { typedef T type; };
 
+	template<class Iter>
+	struct iterator_traits;
+
 	template<class InputIt>
-	typename std::iterator_traits<InputIt>::difference_type	distance(InputIt first,
+	typename ft::iterator_traits<InputIt>::difference_type	distance(InputIt first,
 																	 InputIt last)
 	{
-		typename std::iterator_traits<InputIt>::difference_type	diff = 0;
+		typename ft::iterator_traits<InputIt>::difference_type	diff = 0;
 		while (first++ != last)
 			diff++;
 		return (diff);
@@ -123,13 +126,32 @@ namespace ft
 	template<> struct is_integral<signed char> : true_type {};
 	template<> struct is_integral<unsigned char> : true_type {};
 
+	struct input_iterator_tag {};
+	struct output_iterator_tag {};
+	struct forward_iterator_tag : input_iterator_tag {};
+	struct bidirectional_iterator_tag : forward_iterator_tag {};
+	struct random_access_iterator_tag : bidirectional_iterator_tag {};
+
 	template<class Iter>
 	struct iterator_traits
 	{
 		typedef typename Iter::difference_type		difference_type;
 		typedef typename Iter::value_type			value_type;
-		typedef typename Iter::pointer_type			pointer_type;
-		typedef typename Iter::reference_type		reference_type;
-		typedef typename Iter::iterator_categorty	iterator_category;
+		typedef typename Iter::pointer				pointer;
+		typedef typename Iter::reference			reference;
+		typedef typename Iter::iterator_category	iterator_category;
 	};
+
+	template<class T>
+	struct iterator_traits<T *>
+	{
+		typedef std::ptrdiff_t	difference_type;
+		typedef T				value_type;
+		typedef T*				pointer;
+		typedef T&				reference;
+		typedef ft::random_access_iterator_tag	iterator_category;
+	};
+
+	template<class T>
+	struct iterator_traits<const T *> : iterator_traits<T *> {};
 }

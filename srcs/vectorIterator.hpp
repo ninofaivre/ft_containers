@@ -15,17 +15,16 @@
 # include "utils.hpp"
 
 template<class T>
-class vectorIterator
+class vectorIterator : public ft::iterator_traits<T *>
 {
 
 public:
 
-	typedef std::random_access_iterator_tag	iterator_category;
-
-	typedef T				value_type;
-	typedef std::ptrdiff_t	difference_type;
-	typedef value_type*		pointer;
-	typedef value_type&		reference;
+	typedef typename ft::iterator_traits<T *>::iterator_category	iterator_category;
+	typedef typename ft::iterator_traits<T *>::value_type		value_type;
+	typedef typename ft::iterator_traits<T *>::difference_type	difference_type;
+	typedef typename ft::iterator_traits<T *>::pointer			pointer;
+	typedef typename ft::iterator_traits<T *>::reference		reference;
 
 private:
 
