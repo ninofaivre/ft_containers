@@ -15,19 +15,12 @@
 # include "ft.hpp"
 # include "utils.hpp"
 # include "vectorIterator.hpp"
-# include "vectorConstIterator.hpp"
 
 # include <memory>
 # include <iostream>
 # include <limits>
 
 # define VIterator typename ft::enable_if<!ft::is_integral<InputIt>::value, InputIt>::type
-
-template<class T>
-class vectorIterator;
-
-template<class T>
-class vectorConstIterator;
 
 namespace ft
 {
@@ -49,7 +42,7 @@ namespace ft
 		typedef typename allocator_type::const_pointer		const_pointer;
 
 		typedef vectorIterator<value_type>				iterator;
-		typedef vectorConstIterator<value_type>			const_iterator;
+		typedef vectorIterator<const value_type>		const_iterator;
 		typedef std::reverse_iterator<iterator>			reverse_iterator;
 		typedef std::reverse_iterator<const_iterator>	const_reverse_iterator;
 	

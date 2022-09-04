@@ -122,4 +122,14 @@ namespace ft
 	template<> struct is_integral<wchar_t> : true_type {};
 	template<> struct is_integral<signed char> : true_type {};
 	template<> struct is_integral<unsigned char> : true_type {};
+
+	template<class Iter>
+	struct iterator_traits
+	{
+		typedef typename Iter::difference_type		difference_type;
+		typedef typename Iter::value_type			value_type;
+		typedef typename Iter::pointer_type			pointer_type;
+		typedef typename Iter::reference_type		reference_type;
+		typedef typename Iter::iterator_categorty	iterator_category;
+	};
 }

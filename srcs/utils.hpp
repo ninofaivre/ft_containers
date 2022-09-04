@@ -15,10 +15,6 @@
 # include <string>
 # include <sstream>
 
-template<class Iterator>
-static typename Iterator::pointer	getPtr(Iterator it)
-{ return (it.operator->()); }
-
 template <typename T>
 std::string	to_string(T value)
 {
