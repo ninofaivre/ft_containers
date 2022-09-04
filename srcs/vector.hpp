@@ -12,9 +12,10 @@
 
 #pragma once
 
-# include "ft.hpp"
-# include "utils.hpp"
 # include "vectorIterator.hpp"
+# include "utils.hpp"
+# include "type_traits.hpp"
+# include "algorithm.hpp"
 
 # include <memory>
 # include <iostream>
@@ -24,7 +25,6 @@
 
 namespace ft
 {
-
 	template < class T, class Alloc = std::allocator<T> >
 	class	vector
 	{
