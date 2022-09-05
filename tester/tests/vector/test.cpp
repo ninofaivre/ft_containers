@@ -4,10 +4,7 @@
 
 int	main(void)
 {
-	NAMESPACE::vector<int>::const_iterator::value_type	test;
-	test = 42;
-	std::cout << test << std::endl;
-	test = 21;
-	std::cout << test << std::endl;
+	NAMESPACE::vector<int>	test;
+	std::cout << test.begin() - test.end() << std::endl;
 	return (0);
 }

@@ -15,7 +15,7 @@
 # include "iterator.hpp"
 
 template<class T>
-class vectorIterator : public ft::iterator_traits<T *>
+class vectorIterator
 {
 
 public:
@@ -41,6 +41,9 @@ public:
 
 	operator	vectorIterator<const T>() const
 	{ return (vectorIterator<const T>(_ptr)); }
+
+	pointer		base(void) const
+	{ return (_ptr); }
 
 	reference	operator*(void) const
 	{ return (*_ptr); }
@@ -93,86 +96,42 @@ public:
 
 typedef std::ptrdiff_t	difference_type;
 
-template<class Iterator>
-static typename Iterator::pointer	getPtr(Iterator it)
-{ return (it.operator->()); }
-
-template<class T>
-bool	operator==(const vectorIterator<T> &lhs, const vectorIterator<T> &rhs)
-{ return (getPtr(lhs) == getPtr(rhs)); }
-
 template<class L, class R>
 bool	operator==(const vectorIterator<L> &lhs, const vectorIterator<R> &rhs)
-{ return (getPtr(lhs) == getPtr(rhs)); }
-
-template<class T>
-bool	operator!=(const vectorIterator<T> &lhs, const vectorIterator<T> &rhs)
-{ return (getPtr(lhs) != getPtr(rhs)); }
+{ return (lhs.base() == rhs.base()); }
 
 template<class L, class R>
 bool	operator!=(const vectorIterator<L> &lhs, const vectorIterator<R> &rhs)
-{ return (getPtr(lhs) != getPtr(rhs)); }
-
-template<class T>
-bool	operator<(const vectorIterator<T> &lhs, const vectorIterator<T> &rhs)
-{ return (getPtr(lhs) < getPtr(rhs)); }
+{ return (lhs.base() != rhs.base()); }
 
 template<class L, class R>
 bool	operator<(const vectorIterator<L> &lhs, const vectorIterator<R> &rhs)
-{ return (getPtr(lhs) < getPtr(rhs)); }
-
-template<class T>
-bool	operator<=(const vectorIterator<T> &lhs, const vectorIterator<T> &rhs)
-{ return (getPtr(lhs) <= getPtr(rhs)); }
+{ return (lhs.base() < rhs.base()); }
 
 template<class L, class R>
 bool	operator<=(const vectorIterator<L> &lhs, const vectorIterator<R> &rhs)
-{ return (getPtr(lhs) <= getPtr(rhs)); }
-
-template<class T>
-bool	operator>(const vectorIterator<T> &lhs, const vectorIterator<T> &rhs)
-{ return (getPtr(lhs) > getPtr(rhs)); }
+{ return (lhs.base() <= rhs.base()); }
 
 template<class L, class R>
 bool	operator>(const vectorIterator<L> &lhs, const vectorIterator<R> &rhs)
-{ return (getPtr(lhs) > getPtr(rhs)); }
-
-template<class T>
-bool	operator>=(const vectorIterator<T> &lhs, const vectorIterator<T> &rhs)
-{ return (getPtr(lhs) >= getPtr(rhs)); }
+{ return (lhs.base() > rhs.base()); }
 
 template<class L, class R>
 bool	operator>=(const vectorIterator<L> &lhs, const vectorIterator<R> &rhs)
-{ return (getPtr(lhs) >= getPtr(rhs)); }
+{ return (lhs.base() >= rhs.base()); }
 
 template<class T>
-vectorIterator<T>	operator+(const int lhs, const vectorIterator<T> &rhs)
-{ return (vectorIterator<T> (lhs + getPtr(rhs))); }
+vectorIterator<T>	operator+(const difference_type lhs, const vectorIterator<T> &rhs)
+{ return (vectorIterator<T> (lhs + rhs.base())); }
 
 template<class T>
-vectorIterator<T>	operator+(const vectorIterator<T> &lhs, const int rhs)
-{ return (vectorIterator<T> (getPtr(lhs) + rhs)); }
+vectorIterator<T>	operator+(const vectorIterator<T> &lhs, const difference_type rhs)
+{ return (vectorIterator<T> (lhs.base() + rhs)); }
 
 template<class T>
-difference_type	operator+(const vectorIterator<T> &lhs, const vectorIterator<T> &rhs)
-{ return(getPtr(lhs) + getPtr(rhs)); }
-
-template<class L, class R>
-difference_type	operator+(const vectorIterator<L> &lhs, const vectorIterator<R> &rhs)
-{ return(getPtr(lhs) + getPtr(rhs)); }
-
-template<class T>
-vectorIterator<T>	operator-(const int lhs, const vectorIterator<T> &rhs)
-{ return (vectorIterator<T> (lhs - getPtr(rhs))); }
-
-template<class T>
-vectorIterator<T>	operator-(const vectorIterator<T> &lhs, const int rhs)
-{ return (vectorIterator<T> (getPtr(lhs) - rhs)); }
-
-template<class T>
-difference_type	operator-(const vectorIterator<T> &lhs, const vectorIterator<T> &rhs)
-{ return(getPtr(lhs) - getPtr(rhs)); }
+vectorIterator<T>	operator-(const vectorIterator<T> &lhs, const difference_type rhs)
+{ return (vectorIterator<T> (lhs.base() - rhs)); }
 
 template<class L, class R>
 difference_type	operator-(const vectorIterator<L> &lhs, const vectorIterator<R> &rhs)
-{ return(getPtr(lhs) - getPtr(rhs)); }
+{ return(lhs.base() - rhs.base()); }
