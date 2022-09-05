@@ -15,6 +15,96 @@ C_GREEN="\e[32m"
 # config #
 
 valgrindOptions=("--track-origins=yes" "-s")
+DIR_CONTAINERS=
+makeArgs=()
+
+function	DisplayHelp()
+{
+	echo "help : working on it..."
+}
+
+function	NonSense()
+{
+	echo -e "${C_RED}Use $1 $2 other arguments doesn't make sense !${C_RESET}" >&2
+	if [ "$#" = "3" ]; then
+		echo -e "($3)"
+	fi
+	DisplayHelp
+	exit 1
+}
+
+function	InvalidArg()
+{
+	echo -e "$1" ": ${C_RED}not a valid argument !${C_RESET}" >&2
+	DisplayHelp
+	exit 1
+}
+
+function	Help()
+{
+	if [ "$1" != "1" ]; then
+		NonSense "help" "with"
+	elif  [ "$#" = "2" ] ; then
+		InvalidArg $2
+	fi
+	DisplayHelp
+	exit 0
+}
+
+function	softCleanRule()
+{
+	if [ "$1" != "1" ]; then
+		NonSense "$2" "with" "$2 is already called by the tester"
+	fi
+	makeArgs+=("$2")
+}
+
+function	cleanRule()
+{
+	if [ "$1" != "0" ]; then
+		NonSense "$2" "after" "it would just cancel the compilation"
+	fi
+	makeArgs+=("$2")
+}
+
+function	reAllRule()
+{
+	if [ "$1" -gt "2" ] || ([ "$1" -eq "2" ] && [ "${2%=*}" != "DIR_CONTAINERS" ])
+	then
+		NonSense "$3" "with" "the only arg that can be used with $3 is DIR_CONTAINERS"
+	fi
+	makeArgs+=("$3")
+}
+
+i=0;
+j=0;
+for arg in "$@"; do
+	if [ "${arg%=*}" = "DIR_CONTAINERS" ]; then
+		DIR_CONTAINERS="$arg"
+		j=$((j+1))
+		continue ;
+	fi
+	case "$arg" in
+		"-h" | "--help")
+			Help "$#";;
+		"softClean")
+			softCleanRule "$#" "$arg";;
+		"fclean" | "clean")
+			cleanRule "$i" "$arg";;
+		"re" | "all")
+			if [ "$j" = "0" ]; then
+				reAllRule "$#" "$2" "$arg"
+			else
+				reAllRule "$#" "$1" "$arg"
+			fi;;
+		"vector" | "map" | "stack")
+			makeArgs+=("$arg");;
+		*)
+			InvalidArg "$arg";;
+	esac
+	i=$((i+1))
+	j=$((j+1))
+done
 
 # config #
 
@@ -22,14 +112,34 @@ valgrindOptions=("--track-origins=yes" "-s")
 
 function	compil()
 {
-	echo "\"make $1 $2\" :" > outputs/compiling.output
-	# shellcheck disable=SC2086
-	if ! make $1 $2 >> outputs/compiling.output 2>&1; then
-		echo -e "${C_RED}Compilation Failed !${C_RESET}"
-		echo -e "output saved in ./outputs/compiling.output"
+	timeout=60 #test
+	make softClean namespace=std >/dev/null 2>&1
+	make softClean namespace=ft >/dev/null 2>&1
+	if ! tstd=$( { time timeout "$timeout" make ${makeArgs[@]} $DIR_CONTAINERS namespace=std; } 2>&1); then
+		if echo "$tstd" | grep -c "Terminated" >/dev/null; then
+			echo -e "${C_RED}STD Make failed !(Timed out)${C_RESET}"
+		else
+			echo -e "${C_RED}STD Make failed !${C_RESET}"
+		fi
 		exit 1
 	fi
+	tstd=$(echo "$tstd" | tail -n 1 | awk '{ print $2 }')
+	echo -e "${C_GREEN}STD Make succeeded${C_RESET}" "	time :" "$tstd"
+	if ! tft=$( { time timeout "$timeout" make ${makeArgs[@]} $DIR_CONTAINERS namespace=ft; } 2>&1); then
+		if echo "$tft" | grep -c "Terminated" >/dev/null; then
+			echo -e "${C_RED}FT Make failed !(Timed out)${C_RESET}"
+		else
+			echo -e "${C_RED}FT Make failed !${C_RESET}"
+		fi
+		exit 1
+	fi
+	tft=$(echo "$tft" | tail -n 1 | awk '{ print $2 }')
+	echo -e "${C_GREEN} FT Make succeeded${C_RESET}" "	time :" "$tft"
 }
+
+compil
+
+exit;
 
 mkdir -p outputs
 compil "$1" "namespace=std"

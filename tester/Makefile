@@ -1,14 +1,13 @@
 ### GLOBAL ###
 
 .DEFAULT_GOAL = all
-MAKE ?= make
 
 CXX = c++
 CXXFLAGS ?= -Wall -Wextra -Werror -std=c++98
 
 DIR_SRC = ./tests
 DIR_OUTPUTS = ./outputs
-DIR_INCLUDE ?= ../srcs
+DIR_CONTAINERS ?= ../srcs
 namespace ?= std
 ifeq ($(namespace), std)
 	rev_namespace = ft
@@ -17,7 +16,7 @@ else
 endif
 DIR_EXEC = ./.exec
 
-INCLUDE = -I$(DIR_INCLUDE)
+INCLUDE = -I$(DIR_CONTAINERS)
 
 $(DIR_EXEC)/%:
 	mkdir -p $@
@@ -83,16 +82,16 @@ map: $(MapDir) $(MapExec)
 all: vector stack map
 
 softClean:
-	rm -f $(DIR_OUTPUTS)/$(VecDirName)/*.output
-	rm -f $(DIR_OUTPUTS)/$(StackDirName)/*.output
-	rm -f $(DIR_OUTPUTS)/$(MapDirName)/*.output
-	-@ "$(MAKE)" softClean namespace="$(rev_namespace)" MAKE="don't loop" 2>/dev/null
+	@rm -f $(DIR_OUTPUTS)/$(VecDirName)/*.output
+	@rm -f $(DIR_OUTPUTS)/$(StackDirName)/*.output
+	@rm -f $(DIR_OUTPUTS)/$(MapDirName)/*.output
+	@echo "deleting $(DIR_OUTPUTS)/$(namespace)_{containers}/*.output"
 
 clean: softClean
-	rm -f $(VecExec)
-	rm -f $(StackExec)
-	rm -f $(MapExec)
-	-@ "$(MAKE)" clean namespace="$(rev_namespace)" MAKE="don't loop" 2>/dev/null
+	@rm -f $(VecExec)
+	@rm -f $(StackExec)
+	@rm -f $(MapExec)
+	@echo "deleting $(DIR_EXEC)/$(namespace)_{containers}/{tests_names}"
 
 fclean: clean
 	rm -rf $(VecDir)
@@ -100,7 +99,6 @@ fclean: clean
 	rm -rf $(MapDir)
 	rm -rf $(DIR_EXEC)
 	rm -rf $(DIR_OUTPUTS)
-	-@ "$(MAKE)" fclean namespace="$(rev_namespace)" MAKE="don't loop" 2>/dev/null
 
 re: fclean all
 
