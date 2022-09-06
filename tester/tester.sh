@@ -113,31 +113,23 @@ done
 function	compil()
 {
 	timeout=60 #test
-	make softClean namespace=std >/dev/null 2>&1
-	make softClean namespace=ft >/dev/null 2>&1
-	if ! tstd=$( { time timeout "$timeout" make ${makeArgs[@]} $DIR_CONTAINERS namespace=std; } 2>&1); then
-		if echo "$tstd" | grep -c "Terminated" >/dev/null; then
-			echo -e "${C_RED}STD Make failed !(Timed out)${C_RESET}"
+	make softClean namespace="$1" >/dev/null 2>&1
+	echo -n $(echo "$1" | awk '{ print toupper($0) }')
+	if [ "$1" = "ft" ]; then echo -n " "; fi
+	if ! t=$( { time timeout "$timeout" make ${makeArgs[@]} $DIR_CONTAINERS namespace="$1"; } 2>&1); then
+		if echo "$t" | grep -c "Terminated" >/dev/null; then
+			echo -e " Make ${C_RED}failed${C_RESET} !(Timed out)"
 		else
-			echo -e "${C_RED}STD Make failed !${C_RESET}"
+			echo -e " Make ${C_RED}failed${C_RESET} !"
 		fi
 		exit 1
 	fi
-	tstd=$(echo "$tstd" | tail -n 1 | awk '{ print $2 }')
-	echo -e "${C_GREEN}STD Make succeeded${C_RESET}" "	time :" "$tstd"
-	if ! tft=$( { time timeout "$timeout" make ${makeArgs[@]} $DIR_CONTAINERS namespace=ft; } 2>&1); then
-		if echo "$tft" | grep -c "Terminated" >/dev/null; then
-			echo -e "${C_RED}FT Make failed !(Timed out)${C_RESET}"
-		else
-			echo -e "${C_RED}FT Make failed !${C_RESET}"
-		fi
-		exit 1
-	fi
-	tft=$(echo "$tft" | tail -n 1 | awk '{ print $2 }')
-	echo -e "${C_GREEN} FT Make succeeded${C_RESET}" "	time :" "$tft"
+	t=$(echo "$t" | tail -n 3 | head -n 1 | awk '{ print $2 }')
+	echo -e " Make ${C_GREEN}succeeded${C_RESET}" "	time :" "$t"
 }
 
-compil
+compil "std"
+compil "ft"
 
 exit;
 

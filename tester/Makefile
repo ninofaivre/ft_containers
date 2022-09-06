@@ -100,7 +100,7 @@ fclean: clean
 	rm -rf $(DIR_EXEC)
 	rm -rf $(DIR_OUTPUTS)
 
-re: fclean all
+re: clean all
 
 .PHONY: all vector stack map softClean clean fclean re
 
