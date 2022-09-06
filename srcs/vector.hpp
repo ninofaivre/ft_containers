@@ -121,30 +121,7 @@ namespace ft
 			this->assign(cpy.begin(), cpy.end());
 			return (*this);
 		}
-
-		bool	operator==(const vector &otherInst) const
-		{
-			if (_size != otherInst._size)
-				return (false);
-			return (ft::equal(this->begin(), this->end(), otherInst.begin()));
-		}
-
-		bool	operator!=(const vector &otherInst) const
-		{ return (!(*this == otherInst)); }
-
-		bool	operator<(const vector &otherInst) const
-		{ return (ft::lexicographical_compare(this->begin(), this->end(),
-											  otherInst.begin(), otherInst.end())); }
-
-		bool	operator<=(const vector &otherInst) const
-		{ return (*this == otherInst || *this < otherInst); }
-
-		bool	operator>(const vector &otherInst) const
-		{ return (!(*this <= otherInst)); }
-
-		bool	operator>=(const vector &otherInst) const
-		{ return (!(*this < otherInst)); }
-
+		
 		allocator_type	get_allocator(void) const
 		{ return (_allocator); }
 		
@@ -263,10 +240,7 @@ namespace ft
 		}
 
 		void	pop_back(void)
-		{
-			_size--;
-			_allocator.destroy(_data + _size);
-		}
+		{ _allocator.destroy(_data + --_size); }
 
 		void	resize(size_type count, const_reference value = value_type ())
 		{
@@ -357,6 +331,35 @@ namespace ft
 		{ return  (const_reverse_iterator (this->begin())); }
 
 	};
+
+	template<class T>
+	bool	operator==(const vector<T> &lhs, const vector<T> &rhs)
+	{
+		if (lhs.size() != rhs.size())
+			return (false);
+		return (ft::equal(lhs.begin(), lhs.end(), rhs.begin()));
+	}
+
+	template<class T>
+	bool	operator!=(const vector<T> &lhs, const vector<T> &rhs)
+	{ return (!(lhs == rhs)); }
+
+	template<class T>
+	bool	operator<(const vector<T> &lhs, const vector<T> &rhs)
+	{ return (ft::lexicographical_compare(lhs.begin(), lhs.end(),
+										  rhs.begin(), rhs.end())); }
+
+	template<class T>
+	bool	operator<=(const vector<T> &lhs, const vector<T> &rhs)
+	{ return (lhs == rhs || lhs < rhs); }
+
+	template<class T>
+	bool	operator>(const vector<T> &lhs, const vector<T> &rhs)
+	{ return (!(lhs <= rhs)); }
+
+	template<class T>
+	bool	operator>=(const vector<T> &lhs, const vector<T> &rhs)
+	{ return (!(lhs < rhs)); }
 
 	template<class T, class Alloc>
 	void	swap(vector<T, Alloc> &a, vector<T, Alloc> &b)
