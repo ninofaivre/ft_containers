@@ -9,13 +9,11 @@ DIR_SRC = ./tests
 DIR_OUTPUTS = ./outputs
 DIR_CONTAINERS ?= ../srcs
 namespace ?= std
-ifeq ($(namespace), std)
-	rev_namespace = ft
-else
-	rev_namespace = std
-endif
+STD := $(if $(filter $(namespace), std),1,0)
+FT := $(if $(filter $(namespace), ft),1,0)
 DIR_EXEC = ./.exec
 
+DEFINE = -D NAMESPACE=$(namespace) -D FT=$(FT) -D STD=$(STD)
 INCLUDE = -I$(DIR_CONTAINERS)
 
 $(DIR_EXEC)/%:
@@ -34,7 +32,7 @@ VecExec = $(addprefix $(DIR_EXEC)/$(VecDirName)/, $(notdir $(VecSrc:.cpp=)))
 VecDir = $(DIR_EXEC)/$(VecDirName) $(DIR_OUTPUTS)/$(VecDirName)
 
 $(DIR_EXEC)/$(VecDirName)/% : $(DIR_SRC)/vector/%.cpp
-	- $(CXX) $(CXXFLAGS) $< $(INCLUDE) -D NAMESPACE=$(namespace) -o $@\
+	- $(CXX) $(CXXFLAGS) $< $(INCLUDE) $(DEFINE) -o $@\
 		2> $(DIR_OUTPUTS)/$(VecDirName)/$(notdir $@).output
 
 $$(VecDir):
@@ -51,7 +49,7 @@ StackExec = $(addprefix $(DIR_EXEC)/$(StackDirName)/, $(notdir $(StackSrc:.cpp=)
 StackDir = $(DIR_EXEC)/$(StackDirName) $(DIR_OUTPUTS)/$(StackDirName)
 
 $(DIR_EXEC)/$(StackDirName)/% : $(DIR_SRC)/stack/%.cpp
-	- $(CXX) $(CXXFLAGS) $< $(INCLUDE) -D NAMESPACE=$(namespace) -o $@\
+	- $(CXX) $(CXXFLAGS) $< $(INCLUDE) $(DEFINE) -o $@\
 		2> $(DIR_OUTPUTS)/$(StackDirName)/$(notdir $@).output
 
 $$(StackDir):
@@ -68,7 +66,7 @@ MapExec = $(addprefix $(DIR_EXEC)/$(MapDirName)/, $(notdir $(MapSrc:.cpp=)))
 MapDir = $(DIR_EXEC)/$(MapDirName) $(DIR_OUTPUTS)/$(MapDirName)
 
 $(DIR_EXEC)/$(MapDirName)/% : $(DIR_SRC)/map/%.cpp
-	- $(CXX) $(CXXFLAGS) $< $(INCLUDE) -D NAMESPACE=$(namespace) -o $@\
+	- $(CXX) $(CXXFLAGS) $< $(INCLUDE) $(DEFINE) -o $@\
 		2> $(DIR_OUTPUTS)/$(MapDirName)/$(notdir $@).output
 
 $$(MapDir):

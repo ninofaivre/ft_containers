@@ -2,8 +2,8 @@
 
 # utils #
 
-#OK="\U2705"
-#KO="\U274C"
+OK="\U2705"
+KO="\U274C"
 
 C_RESET="\e[0m"
 C_PURPLE="\e[34m"
@@ -108,8 +108,6 @@ done
 
 # config #
 
-# init #
-
 function	compil()
 {
 	timeout=60 #test
@@ -124,58 +122,80 @@ function	compil()
 		fi
 		exit 1
 	fi
-	t=$(echo "$t" | tail -n 3 | head -n 1 | awk '{ print $2 }')
+	t=$(echo "$t" | tail -n 3 | awk 'NR==1 { print $2 }')
 	echo -e " Make ${C_GREEN}succeeded${C_RESET}" "	time :" "$t"
+}
+
+function pres() #subtestname #F[rawData] #S[rawData] #only_comp
+{
+	compRes=$(if [ "$2" = "$3" ] ; then echo ${OK}; else echo ${KO}; fi)
+		echo -e -n "$1 $compRes"
+	if [ "$4" != "compact" ]; then
+		echo -e -n "F[$2] S[$3]"
+	fi
+	echo -n "|"
+}
+
+function	oneTest() #testName #ContainerName
+{
+	timeout=2
+	maxTestNameLength=20
+
+	stdCompil=$(test -f ./.exec/std_"$2"/"$1" && echo Y || echo N)
+	if [ "$stdCompil" = "Y" ]; then
+		stdTime=$({ time timeout "$timeout" ./.exec/std_"$2"/"$1" >./outputs/std_"$2"/"$1".output 2>&1; } 2>&1)
+		stdReturn=$?
+		stdTime=$(echo "$stdTime" | awk 'NR==1 { print $2 }')
+	fi
+
+	ftCompil=$(test -f ./.exec/ft_"$2"/"$1" && echo Y || echo N)
+	if [ "$ftCompil" = "Y" ]; then
+		ftTime=$({ time timeout "$timeout" ./.exec/ft_"$2"/"$1" >./outputs/ft_"$2"/"$1".output 2>&1; } 2>&1)
+		ftReturn=$?
+		ftTime=$(echo "$ftTime" | awk 'NR==1 { print $2 }')
+	fi
+
+	if ([ "$ftCompil" = "Y" ] && [ "$stdCompil" = "Y" ]); then
+		sameOutput=$(diff -q ./outputs/std_"$2"/"$1".output ./outputs/ft_"$2"/"$1".output >/dev/null && echo 1 || echo 0)
+	fi
+	
+	echo -n $(echo | awk "{ print substr(\"$1\", 1, $maxTestNameLength); print substr(\"..................\", 1, $maxTestNameLength - ${#1}); }")"|"
+	pres "CC" "$ftCompil" "$stdCompil" "full"
+	if [ "$stdReturn" = "124" ]; then
+		echo -e "${C_RED}STD Timed Out${C_RESET}|"
+		return ;
+	elif [ "$ftReturn" = "124" ]; then
+		echo -e "${C_RED}FT Timed Out ${C_RESET}|"
+		return ;
+	fi
+	if ([ "$ftCompil" = "N" ] && [ "$stdCompil" = "Y" ]); then
+		echo -e "${C_RED} FT shall CC ${C_RESET}|"
+		return ;
+	elif ([ "$stdCompil" = "N" ] && [ "$ftCompil" = "Y" ]); then
+		echo -e "${C_RED}FT shallnt CC${C_RESET}|"
+		return ;
+	elif ([ "$stdCompil" = "N" ] && [ "$ftCompil" = "N" ]); then
+		echo -e "${C_GREEN}CC fail test ${C_RESET}|"
+		return ;
+	fi
+	pres "Out" "1" "$sameOutput" "compact"
+	pres "Ret" "$ftReturn" "$stdReturn" "compact"
+	echo
+
+}
+
+function	oneContainer()
+{
+	echo "TEST OF" $(echo | awk "{ print toupper(\"$1\") }") ":"
+	echo
+	testNameList=$(basename -a -s .cpp ./tests/"$1"/*.cpp)
+	for name in $testNameList; do
+		oneTest "$name" "$1"
+	done
 }
 
 compil "std"
 compil "ft"
 
-exit;
-
-mkdir -p outputs
-compil "$1" "namespace=std"
-compil "$1" "namespace=ft"
-echo -e "${C_GREEN}Compilation Successful !${C_RESET}"
-echo -e "all executions outputs saved at ./outputs/[namespace]_[container]/[testName].output" "\n"
-
-# init #
-
-function	anonymiserOutput()
-{
-	output=$(valgrind ${valgrindOptions[@]} ./.exec/"$1"_vector/"$2" 2>&1)
-	output=$(echo "$output" | sed -e "s/$1/namespace/g" | sed -e "s/^==...==.//")	
-	output=$(echo "$output" | sed -e "s/$1/namespace/g" | sed -e "s/^==....==.//")	
-	output=$(echo "$output" | sed -e "s/$1/namespace/g" | sed -e "s/^==.....==.//")	
-	output=$(echo "$output" | sed -e "s/$1/namespace/g" | sed -e "s/^==......==.//")	
-	echo "$output" > outputs/"$1"_vector/"$2".output
-	return $(( $(echo "$output" | awk 'END { print $3 }') != 0 ))
-}
-
-workingTest=0
-
-mkdir -p outputs/std_vector
-mkdir -p outputs/ft_vector
-for test_file in $(cd ./.exec/std_vector/ || exit; echo *); do
-	echo -n "[$test_file] : "
-	if anonymiserOutput "std" "$test_file"; then
-		echo -e -n "${C_GREEN}no val errors${C_RESET}";
-	else
-		echo -e -n "${C_RED}val errors${C_RESET}";
-	fi
-	echo -n " | "
-	if anonymiserOutput "ft" "$test_file"; then
-		echo -e -n "${C_GREEN}no val errors${C_RESET}";
-	else
-		echo -e -n "${C_RED}val errors${C_RESET}";
-	fi
-	echo -n " -> "
-	if ! diff "outputs/std_vector/$test_file.output" "outputs/ft_vector/$test_file.output" > /dev/null; then
-		echo -e "${C_RED}DIFF${C_RESET}erences beetween STD and FT"
-	else
-		(( workingTest=workingTest+1 ))
-		echo -e "${C_GREEN}NO DIFF${C_RESET}erences beetween STD and FT"
-	fi
-done
-
-echo -e "\n" "${C_PURPLE}FINAL GRADE : $workingTest/$(cd ./.exec/std_vector/ || exit; echo * | wc -w)${C_RESET}"
+echo
+oneContainer "vector"
