@@ -1,6 +1,12 @@
 #include <memory>
 #include <iostream>
 
+//TEST PURPOSE :
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <time.h>
+
 enum { RED, BLACK };
 
 struct node
@@ -62,9 +68,9 @@ public:
 struct tree
 {
 
-public:
+private:
 
-	node	*_root;
+	node					*_root;
 	std::allocator<node>	_allocator;
 
 
@@ -82,9 +88,8 @@ public:
 		}
 	}
 
-	void	insert(int key)
+	void	push(int key)
 	{
-		std::cout << "insert[" << key << "]" << std::endl;
 		node *parent = NULL;
 		node **child = &_root;
 
@@ -95,18 +100,62 @@ public:
 		}
 		*child = _allocator.allocate(1);
 		_allocator.construct(*child, node (key, parent, _allocator)); 
-		fixTreeInsertion(*child);
+		fixTreePush(*child);
+	}
+
+	void	pop(int key)
+	{
+		node	*parent, *child;
+		node	*ndToDelete = search(key);
+		bool	originalColor = _getColor(ndToDelete);
+
+		if (!ndToDelete)
+			return ;
+		node	*y = ndToDelete->_left;
+		if (ndToDelete->_left && ndToDelete->_right)
+		{
+			while (y->_right)
+				y = y->_right;
+			originalColor = _getColor(y);
+			child = y->_left;
+			if (y != ndToDelete->_left)
+			{
+				y->_getParentSidePtr() = y->_left;
+				parent = y->_father;
+				if (y->_left)
+				{
+					y->_left->_father = y->_father;
+					y->_left = NULL;
+				}
+			}
+			else
+				parent = y;
+			_replace(ndToDelete, y);
+		}
+		else
+		{
+			parent = ndToDelete->_father;
+			child = _getOnlyChild(ndToDelete);
+			if (child)
+				originalColor = _getColor(child);
+			_replace(ndToDelete, _getOnlyChild(ndToDelete));
+		}
+		fixTreePop(originalColor, parent, child);
 	}
 
 	node	*search(int key) const
 	{
 		node	*nd = _root;
+
 		while (nd && nd->_key != key)
 			nd = nd->_key < key ? nd->_right : nd->_left;
 		return (nd);
 	}
 
-	node	*replace(node *old, node *nd)
+
+private:
+
+	node	*_replace(node *old, node *nd)
 	{
 		if (nd)
 		{
@@ -134,84 +183,42 @@ public:
 		return (nd);
 	}
 
-	void	remove(int key)
+	void	_swapColor(node	*lhs, node *rhs)
 	{
-		node	*parent, *child;
-		node	*ndToDelete = search(key);
-		bool	originalColor = _getColor(ndToDelete);
-		if (!ndToDelete)
-			return ;
-		std::cout << "remove[" << key << "]" << std::endl;
-		node	*y = ndToDelete->_left;
-		if (ndToDelete->_left && ndToDelete->_right)
-		{
-			while (y->_right)
-				y = y->_right;
-			originalColor = _getColor(y);
-			child = y->_left;
-			if (y != ndToDelete->_left)
-			{
-				y->_getParentSidePtr() = y->_left;
-				parent = y->_father;
-				if (y->_left)
-				{
-					y->_left->_father = y->_father;
-					y->_left = NULL;
-				}
-			}
-			else
-				parent = y;
-			replace(ndToDelete, y);
-		}
-		else
-		{
-			parent = ndToDelete->_father;
-			child = _getOnlyChild(ndToDelete);
-			if (child)
-				originalColor = _getColor(child);
-			replace(ndToDelete, _getOnlyChild(ndToDelete));
-		}
-		fixTreeRemove(originalColor, parent, child);
+		bool	tmp = _getColor(rhs);
+
+		_setColor(rhs, _getColor(lhs));
+		_setColor(lhs, tmp);
 	}
 
-	void	case1(node *parent, node *child, node *sibling)
+	//siblingBlackNephewsBlack
+	void	siblingBlackNephewsBlack(node *parent, node *sibling)
 	{
 		_setColor(sibling, RED);
 		if (_getColor(parent) == RED)
 			_setColor(parent, BLACK);
 		else
-			fixTreeRemove(BLACK, parent->_father, parent);
+			fixTreePop(BLACK, parent->_father, parent);
 	}
 
-	void	swapColor(node	*lhs, node *rhs)
+	//siblingBlackNearNephewRed parent , chlild , sibling
+	void	siblingBlackNearNephewRed(node *parent, node *child, node *sibling)
 	{
-		bool	tmp = _getColor(rhs);
-		_setColor(rhs, _getColor(lhs));
-		_setColor(lhs, tmp);
+		_swapColor(_getNearNephew(parent, child, sibling), sibling);
+		rotate(_getNearNephew(parent, child, sibling), sibling);
+		// child : sibling->_father->_getBrother()
+		//siblingBlackFarNephewRed(sibling->_father->_father, sibling->_father, _getFarNephew(sibling->_father->_father, sibling->_father->_getBrother(), sibling->_father));
+		siblingBlackFarNephewRed(parent, sibling->_father, _getFarNephew(parent, child, sibling->_father)); // doute tester si fonctionnel
 	}
 
-	void	case2(node *parent, node *child, node *sibling)
+	void	siblingBlackFarNephewRed(node *parent, node *sibling, node *farNephew)
 	{
-		swapColor(sibling, parent);
-		rotate(sibling, parent);
-		fixTreeRemove(BLACK, parent, child);
-	}
-
-	void	case3(node *parent, node *child, node *sibling)
-	{
-		swapColor(_getNearChild(parent, child, sibling), sibling);
-		rotate(_getNearChild(parent, child, sibling), sibling);
-		case4(sibling->_father->_father, sibling->_father->_getBrother(), sibling->_father);
-	}
-
-	void	case4(node *parent, node *child, node *sibling)
-	{
-		swapColor(sibling, parent);
-		_setColor(_getFarChild(parent, child, sibling), BLACK);
+		_swapColor(sibling, parent);
+		_setColor(farNephew, BLACK);
 		rotate(sibling, parent);
 	}
 
-	void	fixTreeRemove(bool originalColor, node *parent, node *child) // originColor fatherOfDB DBside
+	void	fixTreePop(bool originalColor, node *parent, node *child) // originColor fatherOfDB DBside
 	{
 		if (!parent)
 		{
@@ -226,18 +233,21 @@ public:
 			_setColor(child, BLACK);
 			return ;
 		}
-		if (_getColor(sibling) == BLACK && _getColor(sibling->_left) == BLACK && _getColor(sibling->_right) == BLACK)
-			case1(parent, child, sibling);
-		else if (_getColor(sibling) == RED)
-			case2(parent, child, sibling);
-		else if (_getColor(sibling) == BLACK && _getColor(_getFarChild(parent, child, sibling)) == BLACK &&
-				 _getColor(_getNearChild(parent, child, sibling)) == RED)
-			case3(parent, child, sibling);
-		else if (_getColor(sibling) == BLACK && _getColor(_getFarChild(parent, child, sibling)) == RED)
-			case4(parent, child, sibling);
+		if (_getColor(sibling) == RED)
+		{
+			_swapColor(sibling, parent);
+			rotate(sibling, parent);
+			fixTreePop(BLACK, parent, child);
+		}
+		else if (_getColor(sibling->_left) == BLACK && _getColor(sibling->_right) == BLACK)
+			siblingBlackNephewsBlack(parent, sibling);
+		else if (_getColor(_getNearNephew(parent, child, sibling)) == RED)
+			siblingBlackNearNephewRed(parent, child, sibling);
+		else if (_getColor(_getFarNephew(parent, child, sibling)) == RED)
+			siblingBlackFarNephewRed(parent, sibling, _getFarNephew(parent, child, sibling));
 	}
 
-	void	fixTreeInsertion(node *Z)
+	void	fixTreePush(node *Z)
 	{
 		if (!Z->_father)
 			_setColor(Z, BLACK);
@@ -246,14 +256,14 @@ public:
 		else if (_getColor(Z->_getUncle()) == RED)
 		{
 			recolor(Z);
-			fixTreeInsertion(Z->_getGrandFather());
+			fixTreePush(Z->_getGrandFather());
 		}
 		else if (Z->isLeft() != Z->_father->isLeft())
-			fixTreeInsertion(rotate(Z, Z->_father));
+			fixTreePush(rotate(Z, Z->_father));
 		else if (Z->isLeft() == Z->_father->isLeft())
 		{
 			recolor(Z);
-			fixTreeInsertion(rotate(Z->_father, Z->_getGrandFather()));
+			fixTreePush(rotate(Z->_father, Z->_getGrandFather()));
 		}
 	}
 
@@ -270,12 +280,7 @@ public:
 		node	**parentRoChild = child->isLeft() ? &parent->_left : &parent->_right;
 		child->_father = parent->_father;
 		if (parent->_father)
-		{
-			if (parent->isLeft())
-				parent->_father->_left = child;
-			else
-				parent->_father->_right = child;
-		}
+			parent->_getParentSidePtr() = child;
 		else
 			this->_root = child;
 		parent->_father = child;
@@ -290,30 +295,38 @@ public:
 	{ return (nd ? nd->_getColor() : BLACK); }
 
 	node	*_getOnlyChild(node *nd) const
-	{
-		if (!nd->_left)
-			return (nd->_right);
-		else if (!nd->_right)
-			return (nd->_left);
-		return (NULL);
-	}
+	{ return (!nd->_left ? nd->_right : nd->_left); }
 
-	node	*_getFarChild(node *parent, node *child, node *sibling) const
-	{
-		if (parent->_left == child)
-			return (sibling->_right);
-		else
-			return (sibling->_left);
-	}
+	node	*_getFarNephew(node *parent, node *child, node *sibling) const
+	{ return (parent->_left == child ? sibling->_right : sibling->_left); }
 
-	node *_getNearChild(node *parent, node *child, node *sibling) const
-	{
-		if (parent->_left == child)
-			return (sibling->_left);
-		else
-			return (sibling->_right);
-	}
+	node *_getNearNephew(node *parent, node *child, node *sibling) const
+	{ return (parent->_left == child ? sibling->_left : sibling->_right); }
 
 	void	_setColor(node *nd, bool c) const
 	{ if (nd) nd->_setColor(c); }
+
 };
+
+int	main(void)
+{
+	tree	test;
+
+	srand( time (NULL) );
+	for (int i = 0; i < 10000; i++)
+	{
+		int b = rand() % 2500;
+		if (!test.search(b))
+		{
+			test.push(b);
+			std::cout << "insert[" << b << "]" << std::endl;
+		}
+		b = rand() % 2500;
+		if (test.search(b))
+		{
+			test.pop(b);
+			std::cout << "delete[" << b << "]" << std::endl;
+		}
+	}
+	return (0);
+}
