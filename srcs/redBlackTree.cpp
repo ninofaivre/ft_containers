@@ -1,8 +1,7 @@
 #include <memory>
 #include <iostream>
 
-#define BLACK false
-#define RED true
+enum { RED, BLACK };
 
 struct node
 {
@@ -85,6 +84,7 @@ public:
 
 	void	insert(int key)
 	{
+		std::cout << "insert[" << key << "]" << std::endl;
 		node *parent = NULL;
 		node **child = &_root;
 
@@ -110,7 +110,7 @@ public:
 	{
 		if (nd)
 		{
-			//nd->_setColor(old->_getColor());
+			_setColor(nd, _getColor(old));
 			if (old->_left && old->_left != nd && !nd->_left)
 			{
 				nd->_left = old->_left;
@@ -136,37 +136,46 @@ public:
 
 	void	remove(int key)
 	{
+		node	*parent, *child;
 		node	*ndToDelete = search(key);
 		bool	originalColor = _getColor(ndToDelete);
 		if (!ndToDelete)
 			return ;
+		std::cout << "remove[" << key << "]" << std::endl;
 		node	*y = ndToDelete->_left;
 		if (ndToDelete->_left && ndToDelete->_right)
 		{
 			while (y->_right)
 				y = y->_right;
 			originalColor = _getColor(y);
+			child = y->_left;
 			if (y != ndToDelete->_left)
 			{
 				y->_getParentSidePtr() = y->_left;
+				parent = y->_father;
 				if (y->_left)
 				{
 					y->_left->_father = y->_father;
-					y->_left= NULL;
+					y->_left = NULL;
 				}
 			}
-			fixTreeRemove(originalColor, replace(ndToDelete, y), y->_left);
+			else
+				parent = y;
+			replace(ndToDelete, y);
 		}
 		else
 		{
-			node *parent = ndToDelete->_father;
-			fixTreeRemove(originalColor, parent, replace(ndToDelete, _getOnlyChild(ndToDelete)));
+			parent = ndToDelete->_father;
+			child = _getOnlyChild(ndToDelete);
+			if (child)
+				originalColor = _getColor(child);
+			replace(ndToDelete, _getOnlyChild(ndToDelete));
 		}
+		fixTreeRemove(originalColor, parent, child);
 	}
 
 	void	case1(node *parent, node *child, node *sibling)
 	{
-		std::cout << "case 1" << std::endl;
 		_setColor(sibling, RED);
 		if (_getColor(parent) == RED)
 			_setColor(parent, BLACK);
@@ -183,16 +192,13 @@ public:
 
 	void	case2(node *parent, node *child, node *sibling)
 	{
-		std::cout << "case 2" << std::endl;
 		swapColor(sibling, parent);
 		rotate(sibling, parent);
-		std::cout << "fix tree again" << std::endl;
 		fixTreeRemove(BLACK, parent, child);
 	}
 
 	void	case3(node *parent, node *child, node *sibling)
 	{
-		std::cout << "case 3" << std::endl;
 		swapColor(_getNearChild(parent, child, sibling), sibling);
 		rotate(_getNearChild(parent, child, sibling), sibling);
 		case4(sibling->_father->_father, sibling->_father->_getBrother(), sibling->_father);
@@ -200,7 +206,6 @@ public:
 
 	void	case4(node *parent, node *child, node *sibling)
 	{
-		std::cout << "case 4" << std::endl;
 		swapColor(sibling, parent);
 		_setColor(_getFarChild(parent, child, sibling), BLACK);
 		rotate(sibling, parent);
@@ -215,17 +220,10 @@ public:
 		}
 		node *sibling = (!child) ? _getOnlyChild(parent) : child->_getBrother();
 		if (originalColor == RED)
-		{
-			std::cout << "no need for a fix" << std::endl;
 			return ;
-		}
-		std::cout << "need a fix" << std::endl;
-		if (_getColor(child) == BLACK)
-			std::cout << "DB" << std::endl;
-		else
+		if (_getColor(child) == RED)
 		{
 			_setColor(child, BLACK);
-			std::cout << "PAS DE DOUBLE BLACK (simple recolo de child)" << std::endl;
 			return ;
 		}
 		if (_getColor(sibling) == BLACK && _getColor(sibling->_left) == BLACK && _getColor(sibling->_right) == BLACK)
@@ -235,8 +233,7 @@ public:
 		else if (_getColor(sibling) == BLACK && _getColor(_getFarChild(parent, child, sibling)) == BLACK &&
 				 _getColor(_getNearChild(parent, child, sibling)) == RED)
 			case3(parent, child, sibling);
-		else if (_getColor(sibling) == BLACK && _getColor(_getFarChild(parent, child, sibling)) == RED &&
-				 _getColor(_getNearChild(parent, child, sibling)) == BLACK)
+		else if (_getColor(sibling) == BLACK && _getColor(_getFarChild(parent, child, sibling)) == RED)
 			case4(parent, child, sibling);
 	}
 
@@ -319,86 +316,4 @@ public:
 
 	void	_setColor(node *nd, bool c) const
 	{ if (nd) nd->_setColor(c); }
-	// TESTING
-
-	void	print(void)
-	{ this->printLevelOrder(_root); }
-
-	int		height(node *_root)
-	{
-		if (!_root)
-			return 0;
-		int leftHeight = height(_root->_left);
-		int rightHeight = height(_root->_right);
-		return (leftHeight < rightHeight ? rightHeight + 1 : leftHeight + 1);
-	}
-
-	void	printLevelOrder(node *_root)
-	{
-		for (int i = 1; i <= this->height(_root); i++)
-		{
-			this->printGivenLevel(_root, i);
-			std::cout << std::endl;
-		}
-	}
-
-	void	printGivenLevel(node *_root, int floor)
-	{
-		if (!_root)
-			return ;
-		if (floor == 1)
-			std::cout << _root->_key << " " << ((_getColor(_root) == BLACK) ? "black" : "red..") << "|  ";
-		else if (floor > 1)
-		{
-			printGivenLevel(_root->_left, floor - 1);
-			printGivenLevel(_root->_right, floor - 1);
-		}
-	}
-
 };
-
-int	main(void)
-{
-	tree	test;
-	test.insert(12);
-	test.insert(50);
-	test.insert(2);
-	test.insert(8);
-	test.insert(49);
-	test.insert(17);
-	test.insert(13);
-	test.insert(39);
-	test.print();
-	std::cout << "--------------------------------" << std::endl;
-	std::cout << "delete 49" << std::endl;
-	test.remove(49);
-	test.print();
-	std::cout << "--------------------------------" << std::endl;
-	std::cout << "delete 2" << std::endl;
-	test.remove(2);
-	test.print();
-	std::cout << "--------------------------------" << std::endl;
-	std::cout << "delete 8" << std::endl;
-	test.remove(8);
-	test.print();
-	std::cout << "--------------------------------" << std::endl;
-	std::cout << "delete 12" << std::endl;
-	test.remove(12);
-	test.print();
-	std::cout << "--------------------------------" << std::endl;
-	std::cout << "delete 13" << std::endl;
-	test.remove(13);
-	test.print();
-	std::cout << "--------------------------------" << std::endl;
-	std::cout << "delete 39" << std::endl;
-	test.remove(39);
-	test.print();
-	std::cout << "--------------------------------" << std::endl;
-	std::cout << "delete 17" << std::endl;
-	test.remove(17);
-	test.print();
-	std::cout << "--------------------------------" << std::endl;
-	std::cout << "delete 50" << std::endl;
-	test.remove(50);
-	test.print();
-}
