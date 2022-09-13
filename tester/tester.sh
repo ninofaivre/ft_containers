@@ -36,11 +36,11 @@ for arg in "$@"; do
 			"DIR_CONTAINERS")
 				makeArgs+=("$arg");;
 			"CCTimeOut")
-				CCTimeOut=${arg#=*};;
+				CCTimeOut=${arg#*=};;
 			"ExecTimeOut")
-				ExecTimeOut=${arg#=*};;
+				ExecTimeOut=${arg#*=};;
 			"maxTestNameLength")
-				maxTestNameLength=${arg#=*};;
+				maxTestNameLength=${arg#*=};;
 			*)
 				InvalidArg "$arg";;
 		esac
@@ -90,20 +90,33 @@ function pres() #subtestname #F[rawData] #S[rawData] #only_comp
 	echo -n "|"
 }
 
+function presTime()
+{
+	#echo -n "$1|$2"
+	stdTime=$(echo $1 | awk -F'[.ms]' '{ print $3 }' | sed -e 's/00//')
+	ftTime=$(echo $2 | awk -F'[.ms]' '{ print $3 }' | sed -e 's/00//')
+	diff=$((stdTime-ftTime))
+	if (( "$diff" <= "2" )) && (( "$diff" >= "-2" )); then
+		stdTime="$ftTime"
+	fi
+	echo -n "Time" $(echo | awk -v ft=$ftTime -v std=$stdTime '{ print ft/std*100-100 "%" }')"	|"
+	#echo -n $(( ((ftTime / stdTime) * 100) + (ftTime % stdTime) -100 ))"%"
+}
+
 function	oneTest() #testName #ContainerName
 {
 	stdCompil=$(test -f ./.exec/std_"$2"/"$1" && echo Y || echo N)
 	if [ "$stdCompil" = "Y" ]; then
 		stdTime=$({ time timeout "$ExecTimeOut" ./.exec/std_"$2"/"$1" >./outputs/std_"$2"/"$1".output 2>&1; } 2>&1)
 		stdReturn=$?
-		stdTime=$(echo "$stdTime" | awk 'NR==1 { print $2 }')
+		stdTime=$(echo "$stdTime" | awk 'NR==2 { print $2 }')
 	fi
 
 	ftCompil=$(test -f ./.exec/ft_"$2"/"$1" && echo Y || echo N)
 	if [ "$ftCompil" = "Y" ]; then
 		ftTime=$({ time timeout "$ExecTimeOut" ./.exec/ft_"$2"/"$1" >./outputs/ft_"$2"/"$1".output 2>&1; } 2>&1)
 		ftReturn=$?
-		ftTime=$(echo "$ftTime" | awk 'NR==1 { print $2 }')
+		ftTime=$(echo "$ftTime" | awk 'NR==2 { print $2 }')
 	fi
 
 	if ([ "$ftCompil" = "Y" ] && [ "$stdCompil" = "Y" ]); then
@@ -131,6 +144,7 @@ function	oneTest() #testName #ContainerName
 	fi
 	pres "Out" "1" "$sameOutput" "compact"
 	pres "Ret" "$ftReturn" "$stdReturn" "compact"
+	presTime "$stdTime" "$ftTime"
 	echo
 }
 

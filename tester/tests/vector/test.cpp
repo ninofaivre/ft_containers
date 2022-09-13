@@ -30,5 +30,17 @@ int	main(void)
 		CC fail();
 	#endif
 	*/
+	/*
+	#if FT // slower FT
+		for (int i = 0; i < 9999999; i++)
+			std::cout << "test" << std::endl;
+	#endif
+	*/
+	/*
+	#if STD // slower STD
+		for (int i = 0; i < 9999999; i++)
+			std::cout << "test" << std::endl;
+	#endif
+	*/
 	return (0);
 }
