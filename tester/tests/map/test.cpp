@@ -1,13 +1,11 @@
 #include "map.hpp"
+#include <map>
 #include <iostream>
 
 int	main(void)
 {
-	ft::map<std::string, std::string>	test;
-	std::cout << test["paulo"] << std::endl;
-	std::cout << test["paulo"] << std::endl;
-	std::cout << test["nino"] << std::endl;
-	std::cout << test["paulo"] << std::endl;
-	std::cout << test["paulo"] << std::endl;
+	ft::map<int, int>	test;
+	test[42] = 42;
+	std::cout << test[42] << std::endl;
 	return (0);
 }

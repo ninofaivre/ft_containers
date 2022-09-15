@@ -15,26 +15,24 @@
 # include "utility.hpp"
 # include <memory>
 # include <cstddef>
+# include <functional>
 
 //enum { RED, BLACK };
 # define RED true
 # define BLACK false
 
-template<class Key, class Value, class Alloc>
+template<class Data, class Alloc>
 struct node
 {
 
 public:
 
-	typedef Key		key_type;
-	typedef Value	value_type;
 	typedef typename Alloc::rebind<node>::other			allocator_type;
-	typedef typename ft::pair<key_type, value_type>	pair;
 
 
 private:
 
-	ft::pair<key_type, value_type>	_data;
+	Data			_data;
 	allocator_type	_allocator;
 	bool	_color;
 
@@ -45,8 +43,8 @@ public:
 	node					*_left;
 	node					*_right;
 
-	node(pair data, node *father, allocator_type allocator)
-	: _data(data), _allocator(allocator), _color(RED), _father(father), _left(NULL), _right(NULL) {}
+	node(Data d, node *father, allocator_type allocator)
+	: _data(d), _allocator(allocator), _color(RED), _father(father), _left(NULL), _right(NULL) {}
 
 	~node(void)
 	{
@@ -83,36 +81,43 @@ public:
 	void	_setColor(bool	c)
 	{ _color = c; }
 
-	key_type	getKey(void) const
-	{ return (_data.first); }
-
-	value_type	&getValueRef(void)
-	{ return (_data.second); }
+	Data	&getData(void)
+	{ return (_data); }
 
 };
 
-template< class Key, class Value, class Alloc >
+template< class Data, class Compare, class Alloc, class Key = Data >
 struct tree
 {
 
 public:
 
-	typedef Key		key_type;
-	typedef Value	value_type;
-	typedef typename Alloc::rebind< node<Key, Value, Alloc> >::other	allocator_type;
-	typedef typename ft::pair<key_type, value_type>	pair;
+	typedef Data	data_type;
+	typedef typename Alloc::rebind< node<Data, Alloc> >::other	allocator_type;
 
 
 private:
 
-	node<Key, Value, Alloc>	*_root;
-	allocator_type			_allocator;
+	node<Data, Alloc>	*_root;
+	allocator_type				_allocator;
+	int	(*_comp)(Key, Data);
 
+	int	_defaultComp(Key a, Data b)
+	{
+		Compare c;
+		if (!c(a, b) && !c(b, a))
+			return (0);
+		else
+			return (c(a, b) ? -1 : 1);
+	}
 
 public:
 
+	tree(int (*comp)(Key, Data), allocator_type allocator = allocator_type ())
+	: _root(NULL), _allocator(allocator), _comp(comp) {}
+
 	tree(allocator_type allocator = allocator_type ())
-	: _root(NULL), _allocator(allocator) {}
+	: _root(NULL), _allocator(allocator), _comp(&_defaultComp) {}
 
 	~tree(void)
 	{
@@ -123,30 +128,30 @@ public:
 		}
 	}
 
-	void	push(pair p)
+	void	push(Data d)
 	{
-		node<Key, Value, Alloc> *parent = NULL;
-		node<Key, Value, Alloc> **child = &_root;
+		node<Data, Alloc> *parent = NULL;
+		node<Data, Alloc> **child = &_root;
 
 		while (*child)
 		{
 			parent = *child;
-			child = (p.first < (*child)->getKey()) ? &(*child)->_left : &(*child)->_right;
+			child = (_comp(d.first, (*child)->getData()) < 0) ? &(*child)->_left : &(*child)->_right;
 		}
 		*child = _allocator.allocate(1);
-		_allocator.construct(*child, node<Key, Value, Alloc>(p, parent, _allocator)); 
+		_allocator.construct(*child, node<Data, Alloc>(d, parent, _allocator)); 
 		fixTreePush(*child);
 	}
 
-	void	pop(pair p)
+	void	pop(Key key)
 	{
-		node<Key, Value, Alloc>	*parent, *child;
-		node<Key, Value, Alloc>	*ndToDelete = search(p.first);
+		node<Data, Alloc>	*parent, *child;
+		node<Data, Alloc>	*ndToDelete = search(key);
 		bool	originalColor = _getColor(ndToDelete);
 
 		if (!ndToDelete)
 			return ;
-		node<Key, Value, Alloc>	*y = ndToDelete->_left;
+		node<Data, Alloc>	*y = ndToDelete->_left;
 		if (ndToDelete->_left && ndToDelete->_right)
 		{
 			while (y->_right)
@@ -178,19 +183,19 @@ public:
 		fixTreePop(originalColor, parent, child);
 	}
 
-	node<Key, Value, Alloc>	*search(key_type key)
+	node<Data, Alloc>	*search(Key key)
 	{
-		node<Key, Value, Alloc>	*nd = _root;
-
-		while (nd && nd->getKey() != key)
-			nd = (key < nd->getKey()) ? nd->_left : nd->_right;
+		node<Data, Alloc>	*nd = _root;
+		
+		while (nd && _comp(key, nd->getData()))
+			nd = (_comp(key, nd->getData()) < 0) ? nd->_left : nd->_right;
 		return (nd);
 	}
 
 
 private:
 
-	node<Key, Value, Alloc>	*_replace(node<Key, Value, Alloc> *old, node<Key, Value, Alloc> *nd)
+	node<Data, Alloc>	*_replace(node<Data, Alloc> *old, node<Data, Alloc> *nd)
 	{
 		if (nd)
 		{
@@ -218,7 +223,7 @@ private:
 		return (nd);
 	}
 
-	void	_swapColor(node<Key, Value, Alloc>	*lhs, node<Key, Value, Alloc> *rhs)
+	void	_swapColor(node<Data, Alloc>	*lhs, node<Data, Alloc> *rhs)
 	{
 		bool	tmp = _getColor(rhs);
 
@@ -227,7 +232,7 @@ private:
 	}
 
 	//siblingBlackNephewsBlack
-	void	siblingBlackNephewsBlack(node<Key, Value, Alloc> *parent, node<Key, Value, Alloc> *sibling)
+	void	siblingBlackNephewsBlack(node<Data, Alloc> *parent, node<Data, Alloc> *sibling)
 	{
 		_setColor(sibling, RED);
 		if (_getColor(parent) == RED)
@@ -237,7 +242,7 @@ private:
 	}
 
 	//siblingBlackNearNephewRed parent , chlild , sibling
-	void	siblingBlackNearNephewRed(node<Key, Value, Alloc> *parent, node<Key, Value, Alloc> *child, node<Key, Value, Alloc> *sibling)
+	void	siblingBlackNearNephewRed(node<Data, Alloc> *parent, node<Data, Alloc> *child, node<Data, Alloc> *sibling)
 	{
 		_swapColor(_getNearNephew(parent, child, sibling), sibling);
 		rotate(_getNearNephew(parent, child, sibling), sibling);
@@ -246,21 +251,21 @@ private:
 		siblingBlackFarNephewRed(parent, sibling->_father, _getFarNephew(parent, child, sibling->_father)); // doute tester si fonctionnel
 	}
 
-	void	siblingBlackFarNephewRed(node<Key, Value, Alloc> *parent, node<Key, Value, Alloc> *sibling, node<Key, Value, Alloc> *farNephew)
+	void	siblingBlackFarNephewRed(node<Data, Alloc> *parent, node<Data, Alloc> *sibling, node<Data, Alloc> *farNephew)
 	{
 		_swapColor(sibling, parent);
 		_setColor(farNephew, BLACK);
 		rotate(sibling, parent);
 	}
 
-	void	fixTreePop(bool originalColor, node<Key, Value, Alloc> *parent, node<Key, Value, Alloc> *child) // originColor fatherOfDB DBside
+	void	fixTreePop(bool originalColor, node<Data, Alloc> *parent, node<Data, Alloc> *child) // originColor fatherOfDB DBside
 	{
 		if (!parent)
 		{
 			_setColor(child, BLACK);
 			return ;
 		}
-		node<Key, Value, Alloc> *sibling = (!child) ? _getOnlyChild(parent) : child->_getBrother();
+		node<Data, Alloc> *sibling = (!child) ? _getOnlyChild(parent) : child->_getBrother();
 		if (originalColor == RED)
 			return ;
 		if (_getColor(child) == RED)
@@ -282,7 +287,7 @@ private:
 			siblingBlackFarNephewRed(parent, sibling, _getFarNephew(parent, child, sibling));
 	}
 
-	void	fixTreePush(node<Key, Value, Alloc> *Z)
+	void	fixTreePush(node<Data, Alloc> *Z)
 	{
 		if (!Z->_father)
 			_setColor(Z, BLACK);
@@ -302,17 +307,17 @@ private:
 		}
 	}
 
-	void	recolor(node<Key, Value, Alloc> *nd)
+	void	recolor(node<Data, Alloc> *nd)
 	{
 		_setColor(nd->_father, BLACK);
 		_setColor(nd->_getUncle(), BLACK);
 		_setColor(nd->_getGrandFather(), RED);
 	}
 
-	node<Key, Value, Alloc>	*rotate(node<Key, Value, Alloc> *child, node<Key, Value, Alloc> *parent)
+	node<Data, Alloc>	*rotate(node<Data, Alloc> *child, node<Data, Alloc> *parent)
 	{
-		node<Key, Value, Alloc>	**childRoChild = child->isLeft() ? &child->_right : &child->_left;
-		node<Key, Value, Alloc>	**parentRoChild = child->isLeft() ? &parent->_left : &parent->_right;
+		node<Data, Alloc>	**childRoChild = child->isLeft() ? &child->_right : &child->_left;
+		node<Data, Alloc>	**parentRoChild = child->isLeft() ? &parent->_left : &parent->_right;
 		child->_father = parent->_father;
 		if (parent->_father)
 			parent->_getParentSidePtr() = child;
@@ -326,19 +331,19 @@ private:
 		return (parent);
 	}
 
-	bool	_getColor(node<Key, Value, Alloc> *nd) const
+	bool	_getColor(node<Data, Alloc> *nd) const
 	{ return (nd ? nd->_getColor() : BLACK); }
 
-	node<Key, Value, Alloc>	*_getOnlyChild(node<Key, Value, Alloc> *nd) const
+	node<Data, Alloc>	*_getOnlyChild(node<Data, Alloc> *nd) const
 	{ return (!nd->_left ? nd->_right : nd->_left); }
 
-	node<Key, Value, Alloc>	*_getFarNephew(node<Key, Value, Alloc> *parent, node<Key, Value, Alloc> *child, node<Key, Value, Alloc> *sibling) const
+	node<Data, Alloc>	*_getFarNephew(node<Data, Alloc> *parent, node<Data, Alloc> *child, node<Data, Alloc> *sibling) const
 	{ return (parent->_left == child ? sibling->_right : sibling->_left); }
 
-	node<Key, Value, Alloc> *_getNearNephew(node<Key, Value, Alloc> *parent, node<Key, Value, Alloc> *child, node<Key, Value, Alloc> *sibling) const
+	node<Data, Alloc> *_getNearNephew(node<Data, Alloc> *parent, node<Data, Alloc> *child, node<Data, Alloc> *sibling) const
 	{ return (parent->_left == child ? sibling->_left : sibling->_right); }
 
-	void	_setColor(node<Key, Value, Alloc> *nd, bool c) const
+	void	_setColor(node<Data, Alloc> *nd, bool c) const
 	{ if (nd) nd->_setColor(c); }
 
 };
