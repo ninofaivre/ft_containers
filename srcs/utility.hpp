@@ -45,7 +45,7 @@ namespace ft
 
 	template<class T1, class T2>
 	ft::pair<T1, T2>	make_pair(const T1 &f, const T2 &s)
-	{ return (pair (f, s)); }
+	{ return (pair<T1, T2> (f, s)); }
 
 	template<class T1, class T2>
 	bool	operator==(const pair<T1, T2> &lhs, const pair<T1, T2> &rhs)
