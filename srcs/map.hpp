@@ -45,7 +45,7 @@ namespace ft
 
 		tree<value_type, key_compare, allocator_type>	_data;
 
-		static int _bstMapComp(value_type a, value_type b)
+		static int _rbtMapComp(value_type a, value_type b)
 		{
 			key_compare	c;
 			if (!c(a.first, b.first) && !c(b.first, a.first))
