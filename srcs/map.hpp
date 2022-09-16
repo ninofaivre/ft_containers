@@ -58,7 +58,7 @@ namespace ft
 	public:
 		
 		map(void)
-		: _data(tree<value_type, key_compare, allocator_type> (_bstMapComp)) {};
+		: _data(tree<value_type, key_compare, allocator_type> (_rbtMapComp)) {};
 
 		mapped_type	&operator[](const Key &key)
 		{

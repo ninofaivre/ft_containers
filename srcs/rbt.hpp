@@ -84,6 +84,9 @@ public:
 	Data	&getData(void)
 	{ return (_data); }
 
+	void	setData(const Data &d)
+	{ _data = d; }
+
 };
 
 template< class Data, class Compare, class Alloc, class Comp = int(*)(Data, Data)>
@@ -198,6 +201,56 @@ public:
 
 	size_type	getSize(void) const
 	{ return (_size); }
+
+	data_type	min(void)
+	{
+		node<Data, Alloc>	*nd = _root;
+		
+		while (nd && nd->_left)
+			nd = nd->_left;
+		return (nd);
+	}
+
+	data_type	max(void)
+	{
+		node<Data, Alloc>	*nd = _root;
+
+		while( nd && nd->_right)
+			nd = nd->_right;
+		return (nd);
+	}
+
+	/*
+	void	copyOneNode(node<Data, Alloc> *father, node<Data, Alloc> **nd, node<Data, Alloc> *cpyNd)
+	{
+		if (!*nd)
+		{
+			*nd = _allocator.allocate(1);
+			_allocator.construct(*nd, node<Data, Alloc> (cpyNd->getData(), father, _allocator) );
+		}
+		else
+		{
+			(*nd)->_setColor(cpyNd->getColor);
+			(*nd)->setData(cpyNd->getData());
+		}
+	}
+
+	void	recCopy(node<Data, Alloc> *father, node<Data, Alloc> **nd, node<Data, Alloc> *cpyNd)
+	{
+		if (!cpyNd)
+		{
+			_allocator.destroy(*nd);
+			_allocator.deallocate(*nd, 1);
+			return ;
+		}
+		copyOneNode(father, nd, cpyNd);
+		recCopy(*nd, &(*nd)->_right, cpyNd->_right);
+		recCopy(*nd, &(*nd)->_left, cpyNd->_left);
+	}
+
+	void	copy(const tree &cpy)
+	{ recCopy(NULL, &_root, cpy._root); }
+	*/
 
 
 private:
