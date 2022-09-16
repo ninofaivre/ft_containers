@@ -29,8 +29,8 @@ namespace ft
 		typedef T			mapped_type;
 		typedef Compare		key_compare;
 		typedef Allocator	allocator_type;
-
 		typedef typename ft::pair<const key_type, mapped_type>	value_type;
+
 		typedef typename allocator_type::size_type				size_type;
 		typedef typename allocator_type::difference_type		difference_type;
 
@@ -39,26 +39,25 @@ namespace ft
 
 		typedef typename allocator_type::pointer	pointer;
 		typedef const pointer						const_pointer;
+		
+		typedef rbtIterator<value_type, allocator_type>	iterator;
 
 
 	private:
 
-		tree<value_type, key_compare, allocator_type>	_data;
+		rbt<value_type, key_compare, allocator_type>	_data;
 
-		static int _rbtMapComp(value_type a, value_type b)
+		static bool	_rbtMapComp(value_type a, value_type b)
 		{
 			key_compare	c;
-			if (!c(a.first, b.first) && !c(b.first, a.first))
-				return (0);
-			else
-				return (c(a.first, b.first) ? -1 : 1);
+			return (c(a.first, b.first));
 		}
 
 
 	public:
 		
 		map(void)
-		: _data(tree<value_type, key_compare, allocator_type> (_rbtMapComp)) {};
+		: _data(rbt<value_type, key_compare, allocator_type> (_rbtMapComp)) {};
 
 		mapped_type	&operator[](const Key &key)
 		{
@@ -69,6 +68,12 @@ namespace ft
 
 		size_type	size(void) const
 		{ return (_data.getSize()); }
+
+		bool	empty(void) const
+		{ return (!this->size()); }
+
+		iterator	begin(void)
+		{ return (_data.getIterator(_data.min())); }
 
 	};
 

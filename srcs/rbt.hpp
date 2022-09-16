@@ -1,7 +1,7 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                       :::      ::::::::    */
-/*   redBlackTree.hpp                                  :+:      :+:    :+:    */
+/*   redBlackrbt.hpp                                  :+:      :+:    :+:    */
 /*                                                   +:+ +:+         +:+      */
 /*   By: nfaivre <nfaivre@student.42.fr>           +#+  +:+       +#+         */
 /*                                               +#+#+#+#+#+   +#+            */
@@ -89,8 +89,113 @@ public:
 
 };
 
-template< class Data, class Compare, class Alloc, class Comp = int(*)(Data, Data)>
-struct tree
+template<class Data, class Alloc, class Comp = bool(*)(Data, Data)>
+class rbtIterator
+{
+
+private:
+
+	node<Data, Alloc>	*_lastValidPtr;
+	node<Data, Alloc>	*_ptr;
+	Comp				_comp;
+
+
+public:
+
+	rbtIterator(node<Data, Alloc> *ptr, Comp c)
+	: _lastValidPtr(NULL), _ptr(ptr), _comp(c){}
+
+	Data	operator*(void)
+	{ return (_ptr->getData()); }
+
+	rbtIterator	operator++(void)
+	{
+		node<Data, Alloc>	*next = NULL;
+
+		if (_lastValidPtr == _ptr)
+			_lastValidPtr = NULL;
+		if (!_lastValidPtr)
+		{
+			for(node<Data, Alloc> *tmp = _ptr->_father; tmp != NULL; tmp = tmp->_father)
+			{
+				if (!_comp(_ptr->getData(), tmp->getData()))
+					continue ;
+				if (!next || _comp(tmp->getData(), next->getData()))
+					next = tmp;
+			}
+			for(node<Data, Alloc> *tmp = _ptr->_right; tmp != NULL; tmp = tmp->_left)
+			{
+				if (!_comp(_ptr->getData(), tmp->getData()))
+					continue ;
+				if (!next || _comp(tmp->getData(), next->getData()))
+					next = tmp;
+			}
+			if (!next)
+			{
+				_lastValidPtr = _ptr;
+				_ptr++;
+			}
+			else
+				_ptr = next;
+		}
+		else
+			_ptr++;
+		return (*this);
+	}
+
+	rbtIterator	operator++(int)
+	{
+		rbtIterator	tmp = *this;
+		this->operator++();
+		return (tmp);
+	}
+
+	rbtIterator	operator--(void)
+	{
+		node<Data, Alloc>	*prev = NULL;
+
+		if (_lastValidPtr == _ptr)
+			_lastValidPtr = NULL;
+		if (!_lastValidPtr)
+		{
+			for(node<Data, Alloc> *tmp = _ptr->_father; tmp != NULL; tmp = tmp->_father)
+			{
+				if (!_comp(tmp->getData(), _ptr->getData()))
+					continue ;
+				if (!prev || _comp(prev->getData(), tmp->getData()))
+					prev = tmp;
+			}
+			for(node<Data, Alloc> *tmp = _ptr->_left; tmp != NULL; tmp = tmp->_right)
+			{
+				if (!_comp(tmp->getData(), _ptr->getData()))
+					continue ;
+				if (!prev || _comp(prev->getData(), tmp->getData()))
+					prev = tmp;
+			}
+			if (!prev)
+			{
+				_lastValidPtr = _ptr;
+				_ptr--;
+			}
+			else
+				_ptr = prev;
+		}
+		else
+			_ptr--;
+		return (*this);
+	}
+
+	rbtIterator	operator--(int)
+	{
+		rbtIterator	tmp = *this;
+		this->operator--();
+		return (tmp);
+	}
+
+};
+
+template< class Data, class Compare, class Alloc, class Comp = bool(*)(Data, Data)>
+struct rbt
 {
 
 public:
@@ -98,7 +203,7 @@ public:
 	typedef Data		data_type;
 	typedef std::size_t	size_type;
 
-	typedef typename Alloc::rebind< node<Data, Alloc> >::other	allocator_type;
+	typedef typename node<Data, Alloc>::allocator_type	allocator_type;
 
 
 private:
@@ -108,24 +213,21 @@ private:
 	Comp	_comp;
 	size_type	_size;
 
-	int	_defaultComp(Data a, Data b)
+	static bool	_defaultComp(Data a, Data b)
 	{
 		Compare c;
-		if (!c(a, b) && !c(b, a))
-			return (0);
-		else
-			return (c(a, b) ? -1 : 1);
+		return (c(a, b));
 	}
 
 public:
 
-	tree(Comp comp, allocator_type allocator = allocator_type ())
+	rbt(Comp comp, allocator_type allocator = allocator_type ())
 	: _root(NULL), _allocator(allocator), _comp(comp), _size(0) {}
 
-	tree(allocator_type allocator = allocator_type ())
+	rbt(allocator_type allocator = allocator_type ())
 	: _root(NULL), _allocator(allocator), _comp(_defaultComp), _size(0) {}
 
-	~tree(void)
+	~rbt(void)
 	{
 		if (_root)
 		{
@@ -143,11 +245,11 @@ public:
 		while (*child)
 		{
 			parent = *child;
-			child = (_comp(d, (*child)->getData()) < 0) ? &(*child)->_left : &(*child)->_right;
+			child = _comp(d, (*child)->getData()) ? &(*child)->_left : &(*child)->_right;
 		}
 		*child = _allocator.allocate(1);
 		_allocator.construct(*child, node<Data, Alloc>(d, parent, _allocator)); 
-		fixTreePush(*child);
+		fixPush(*child);
 	}
 
 	void	pop(Data d)
@@ -187,22 +289,40 @@ public:
 				originalColor = _getColor(child);
 			_replace(ndToDelete, _getOnlyChild(ndToDelete));
 		}
-		fixTreePop(originalColor, parent, child);
+		fixPop(originalColor, parent, child);
 	}
 
 	node<Data, Alloc>	*search(Data d)
 	{
 		node<Data, Alloc>	*nd = _root;
 		
-		while (nd && _comp(d, nd->getData()))
-			nd = (_comp(d, nd->getData()) < 0) ? nd->_left : nd->_right;
+		while (nd && !(!_comp(d, nd->getData()) && !_comp(nd->getData(), d)))
+			nd = _comp(d, nd->getData()) ? nd->_left : nd->_right;
 		return (nd);
 	}
 
 	size_type	getSize(void) const
 	{ return (_size); }
 
-	data_type	min(void)
+	/* A decaler dans rbt iterator
+	node	*prevNode(node *nd)
+	{
+		node	*prev = NULL;
+		for (node *tmp = nd->_left; tmp != NULL; tmp = tmp->_right)
+		{
+			if (tmp > prev || !prev)
+				prev = tmp;
+		}
+		for (node *tmp = nd->_father; tmp != NULL; tmp = tmp->_father)
+		{
+			if (tmp > prev || !prev)
+				prev = tmp;
+		}
+		return (prev)
+	}
+	*/
+
+	node<Data, Alloc>	*min(void)
 	{
 		node<Data, Alloc>	*nd = _root;
 		
@@ -211,7 +331,7 @@ public:
 		return (nd);
 	}
 
-	data_type	max(void)
+	node<Data, Alloc>	*max(void)
 	{
 		node<Data, Alloc>	*nd = _root;
 
@@ -220,13 +340,17 @@ public:
 		return (nd);
 	}
 
+	rbtIterator<Data, Alloc>	getIterator(node<Data, Alloc> *nd)
+	{ return (rbtIterator<Data, Alloc> (nd, _comp)); }
+
 	/*
 	void	copyOneNode(node<Data, Alloc> *father, node<Data, Alloc> **nd, node<Data, Alloc> *cpyNd)
 	{
 		if (!*nd)
 		{
 			*nd = _allocator.allocate(1);
-			_allocator.construct(*nd, node<Data, Alloc> (cpyNd->getData(), father, _allocator) );
+			_allocator.construct(*nd, node<Data, Alloc> (cpyNd->getData(), father, _allocator));
+			nd->_setColor(cpyNd->getColor);
 		}
 		else
 		{
@@ -237,8 +361,9 @@ public:
 
 	void	recCopy(node<Data, Alloc> *father, node<Data, Alloc> **nd, node<Data, Alloc> *cpyNd)
 	{
-		if (!cpyNd)
+		if (!cpyNd && *nd)
 		{
+			//metre le pointeur vers nd sur le père de nd à NULL
 			_allocator.destroy(*nd);
 			_allocator.deallocate(*nd, 1);
 			return ;
@@ -248,7 +373,7 @@ public:
 		recCopy(*nd, &(*nd)->_left, cpyNd->_left);
 	}
 
-	void	copy(const tree &cpy)
+	void	copy(const rbt &cpy)
 	{ recCopy(NULL, &_root, cpy._root); }
 	*/
 
@@ -298,7 +423,7 @@ private:
 		if (_getColor(parent) == RED)
 			_setColor(parent, BLACK);
 		else
-			fixTreePop(BLACK, parent->_father, parent);
+			fixPop(BLACK, parent->_father, parent);
 	}
 
 	//siblingBlackNearNephewRed parent , chlild , sibling
@@ -318,7 +443,7 @@ private:
 		rotate(sibling, parent);
 	}
 
-	void	fixTreePop(bool originalColor, node<Data, Alloc> *parent, node<Data, Alloc> *child) // originColor fatherOfDB DBside
+	void	fixPop(bool originalColor, node<Data, Alloc> *parent, node<Data, Alloc> *child) // originColor fatherOfDB DBside
 	{
 		if (!parent)
 		{
@@ -337,7 +462,7 @@ private:
 		{
 			_swapColor(sibling, parent);
 			rotate(sibling, parent);
-			fixTreePop(BLACK, parent, child);
+			fixPop(BLACK, parent, child);
 		}
 		else if (_getColor(sibling->_left) == BLACK && _getColor(sibling->_right) == BLACK)
 			siblingBlackNephewsBlack(parent, sibling);
@@ -347,7 +472,7 @@ private:
 			siblingBlackFarNephewRed(parent, sibling, _getFarNephew(parent, child, sibling));
 	}
 
-	void	fixTreePush(node<Data, Alloc> *Z)
+	void	fixPush(node<Data, Alloc> *Z)
 	{
 		if (!Z->_father)
 			_setColor(Z, BLACK);
@@ -356,14 +481,14 @@ private:
 		else if (_getColor(Z->_getUncle()) == RED)
 		{
 			recolor(Z);
-			fixTreePush(Z->_getGrandFather());
+			fixPush(Z->_getGrandFather());
 		}
 		else if (Z->isLeft() != Z->_father->isLeft())
-			fixTreePush(rotate(Z, Z->_father));
+			fixPush(rotate(Z, Z->_father));
 		else if (Z->isLeft() == Z->_father->isLeft())
 		{
 			recolor(Z);
-			fixTreePush(rotate(Z->_father, Z->_getGrandFather()));
+			fixPush(rotate(Z->_father, Z->_getGrandFather()));
 		}
 	}
 
