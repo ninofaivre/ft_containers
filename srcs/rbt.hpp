@@ -86,7 +86,7 @@ public:
 
 };
 
-template< class Data, class Compare, class Alloc, class Key = Data >
+template< class Data, class Compare, class Alloc>
 struct tree
 {
 
@@ -100,9 +100,9 @@ private:
 
 	node<Data, Alloc>	*_root;
 	allocator_type				_allocator;
-	int	(*_comp)(Key, Data);
+	int	(*_comp)(Data, Data);
 
-	int	_defaultComp(Key a, Data b)
+	int	_defaultComp(Data a, Data b)
 	{
 		Compare c;
 		if (!c(a, b) && !c(b, a))
@@ -113,7 +113,7 @@ private:
 
 public:
 
-	tree(int (*comp)(Key, Data), allocator_type allocator = allocator_type ())
+	tree(int (*comp)(Data, Data), allocator_type allocator = allocator_type ())
 	: _root(NULL), _allocator(allocator), _comp(comp) {}
 
 	tree(allocator_type allocator = allocator_type ())
@@ -136,17 +136,17 @@ public:
 		while (*child)
 		{
 			parent = *child;
-			child = (_comp(d.first, (*child)->getData()) < 0) ? &(*child)->_left : &(*child)->_right;
+			child = (_comp(d, (*child)->getData()) < 0) ? &(*child)->_left : &(*child)->_right;
 		}
 		*child = _allocator.allocate(1);
 		_allocator.construct(*child, node<Data, Alloc>(d, parent, _allocator)); 
 		fixTreePush(*child);
 	}
 
-	void	pop(Key key)
+	void	pop(Data d)
 	{
 		node<Data, Alloc>	*parent, *child;
-		node<Data, Alloc>	*ndToDelete = search(key);
+		node<Data, Alloc>	*ndToDelete = search(d);
 		bool	originalColor = _getColor(ndToDelete);
 
 		if (!ndToDelete)
@@ -183,12 +183,12 @@ public:
 		fixTreePop(originalColor, parent, child);
 	}
 
-	node<Data, Alloc>	*search(Key key)
+	node<Data, Alloc>	*search(Data d)
 	{
 		node<Data, Alloc>	*nd = _root;
 		
-		while (nd && _comp(key, nd->getData()))
-			nd = (_comp(key, nd->getData()) < 0) ? nd->_left : nd->_right;
+		while (nd && _comp(d, nd->getData()))
+			nd = (_comp(d, nd->getData()) < 0) ? nd->_left : nd->_right;
 		return (nd);
 	}
 

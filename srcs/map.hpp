@@ -43,28 +43,28 @@ namespace ft
 
 	private:
 
-		tree<value_type, key_compare, allocator_type, key_type>	_data;
+		tree<value_type, key_compare, allocator_type>	_data;
 
 
 	public:
 
-		static int _bstMapComp(key_type a, value_type b)
+		static int _bstMapComp(value_type a, value_type b)
 		{
 			key_compare	c;
-			if (!c(a, b.first) && !c(b.first, a))
+			if (!c(a.first, b.first) && !c(b.first, a.first))
 				return (0);
 			else
-				return (c(a, b.first) ? -1 : 1);
+				return (c(a.first, b.first) ? -1 : 1);
 		}
 
 		map(void)
-		: _data(tree<value_type, key_compare, allocator_type, key_type> (&_bstMapComp)) {};
+		: _data(tree<value_type, key_compare, allocator_type> (&_bstMapComp)) {};
 
 		mapped_type	&operator[](Key key)
 		{
-			if (!_data.search(key))
-				_data.push(ft::make_pair<key_type, mapped_type>(key, mapped_type ()));
-			return ((_data.search(key)->getData()).second);
+			if (!_data.search(ft::make_pair(key, mapped_type ())))
+				_data.push(ft::make_pair(key, mapped_type ()));
+			return ((_data.search(ft::make_pair(key, mapped_type ()))->getData()).second);
 		}
 
 	};
