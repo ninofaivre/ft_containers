@@ -86,13 +86,15 @@ public:
 
 };
 
-template< class Data, class Compare, class Alloc>
+template< class Data, class Compare, class Alloc, class Comp = int(*)(Data, Data)>
 struct tree
 {
 
 public:
 
-	typedef Data	data_type;
+	typedef Data		data_type;
+	typedef std::size_t	size_type;
+
 	typedef typename Alloc::rebind< node<Data, Alloc> >::other	allocator_type;
 
 
@@ -100,7 +102,8 @@ private:
 
 	node<Data, Alloc>	*_root;
 	allocator_type				_allocator;
-	int	(*_comp)(Data, Data);
+	Comp	_comp;
+	size_type	_size;
 
 	int	_defaultComp(Data a, Data b)
 	{
@@ -113,11 +116,11 @@ private:
 
 public:
 
-	tree(int (*comp)(Data, Data), allocator_type allocator = allocator_type ())
-	: _root(NULL), _allocator(allocator), _comp(comp) {}
+	tree(Comp comp, allocator_type allocator = allocator_type ())
+	: _root(NULL), _allocator(allocator), _comp(comp), _size(0) {}
 
 	tree(allocator_type allocator = allocator_type ())
-	: _root(NULL), _allocator(allocator), _comp(&_defaultComp) {}
+	: _root(NULL), _allocator(allocator), _comp(_defaultComp), _size(0) {}
 
 	~tree(void)
 	{
@@ -130,6 +133,7 @@ public:
 
 	void	push(Data d)
 	{
+		_size++;
 		node<Data, Alloc> *parent = NULL;
 		node<Data, Alloc> **child = &_root;
 
@@ -191,6 +195,9 @@ public:
 			nd = (_comp(d, nd->getData()) < 0) ? nd->_left : nd->_right;
 		return (nd);
 	}
+
+	size_type	getSize(void) const
+	{ return (_size); }
 
 
 private:

@@ -58,7 +58,7 @@ namespace ft
 		}
 
 		map(void)
-		: _data(tree<value_type, key_compare, allocator_type> (&_bstMapComp)) {};
+		: _data(tree<value_type, key_compare, allocator_type> (_bstMapComp)) {};
 
 		mapped_type	&operator[](Key key)
 		{
@@ -66,6 +66,9 @@ namespace ft
 				_data.push(ft::make_pair(key, mapped_type ()));
 			return ((_data.search(ft::make_pair(key, mapped_type ()))->getData()).second);
 		}
+
+		size_type	size(void) const
+		{ return (_data.getSize()); }
 
 	};
 
