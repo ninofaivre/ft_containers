@@ -45,9 +45,6 @@ namespace ft
 
 		tree<value_type, key_compare, allocator_type>	_data;
 
-
-	public:
-
 		static int _bstMapComp(value_type a, value_type b)
 		{
 			key_compare	c;
@@ -57,10 +54,13 @@ namespace ft
 				return (c(a.first, b.first) ? -1 : 1);
 		}
 
+
+	public:
+		
 		map(void)
 		: _data(tree<value_type, key_compare, allocator_type> (_bstMapComp)) {};
 
-		mapped_type	&operator[](Key key)
+		mapped_type	&operator[](const Key &key)
 		{
 			if (!_data.search(ft::make_pair(key, mapped_type ())))
 				_data.push(ft::make_pair(key, mapped_type ()));
