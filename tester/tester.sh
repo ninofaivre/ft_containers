@@ -123,7 +123,7 @@ function	oneTest() #testName #ContainerName
 		sameOutput=$(diff -q ./outputs/std_"$2"/"$1".output ./outputs/ft_"$2"/"$1".output >/dev/null && echo 1 || echo 0)
 	fi
 	
-	echo -n $(echo | awk "{ print substr(\"$1\", 1, $maxTestNameLength) substr(\"..................\", 1, $maxTestNameLength - ${#1}); }")"|"
+	echo -n "$(echo | awk -v testName=$1 -v maxTestNameLength=$maxTestNameLength -v testNameLength=${#1} '{ printf("%s%"maxTestNameLength-testNameLength"s\n", substr(testName, 1, maxTestNameLength), " ") ; }')""|"
 	pres "CC" "$ftCompil" "$stdCompil" "full"
 	if [ "$stdReturn" = "124" ]; then
 		echo -e "${C_RED}STD Timed Out${C_RESET}|"

@@ -15,6 +15,7 @@
 # include "vectorIterator.hpp"
 # include "utils.hpp"
 # include "type_traits.hpp"
+# include "iterator.hpp"
 # include "algorithm.hpp"
 
 # include <memory>

@@ -14,6 +14,7 @@
 
 # include "rbt.hpp"
 # include "utility.hpp"
+# include "iterator.hpp"
 # include <memory>
 # include <functional>
 
@@ -40,24 +41,27 @@ namespace ft
 		typedef typename allocator_type::pointer	pointer;
 		typedef const pointer						const_pointer;
 		
-		typedef rbtIterator<value_type, allocator_type>	iterator;
+		typedef rbtIterator<value_type, key_compare, allocator_type>	iterator;
+		typedef rbtIterator<const value_type, key_compare, allocator_type>	const_iterator;
+		typedef ft::reverse_iterator<iterator>	reverse_iterator;
+		typedef ft::reverse_iterator<const_iterator>	const_reverse_iterator;
 
 
 	private:
 
 		rbt<value_type, key_compare, allocator_type>	_data;
 
-		static bool	_rbtMapComp(value_type a, value_type b)
-		{
-			key_compare	c;
-			return (c(a.first, b.first));
-		}
+		static bool	_rbtMapComp(value_type a, value_type b, const key_compare &c)
+		{ return (c(a.first, b.first)); }
+		
+		value_type	_keyToPair(const Key &key)
+		{ return (ft::make_pair(key, mapped_type ())); }
 
 
 	public:
 		
-		map(void)
-		: _data(rbt<value_type, key_compare, allocator_type> (_rbtMapComp)) {};
+		map(const key_compare &comp = key_compare ())
+		: _data(rbt<value_type, key_compare, allocator_type> (_rbtMapComp, comp)) {};
 
 		mapped_type	&operator[](const Key &key)
 		{
@@ -69,11 +73,41 @@ namespace ft
 		size_type	size(void) const
 		{ return (_data.getSize()); }
 
+		iterator	find(const key_type &key)
+		{ return (_data.getIt(_data.search(key))); }
+
+		const_iterator	find(const key_type &key) const
+		{ return (_data.getIt(_data.search(_keyToPair(key)))); }
+
+		size_type	count(const key_type &key) const
+		{ return (_data.count(_keyToPair(key)))}
+
 		bool	empty(void) const
 		{ return (!this->size()); }
 
+		iterator	upper_bound(const key_type &key)
+		{ return (_data.getIt(_data.upper_bound(_keyToPair(key)))); }
+
+		const_iterator	upper_bound(const key_type &key) const
+		{ return (_data.getIt(_data.upper_bound(_keyToPair(key)))); }
+
+		iterator	lower_bound(const key_type &key)
+		{ return (_data.getIt(_data.lower_bound(_keyToPair(key)))); }
+
+		const_iterator	lower_bound(const key_type &key) const
+		{ return (_data.getIt(_data.lower_bound(_keyToPair(key)))); }
+
+		ft::pair<iterator, iterator>	equal_range(const key_type &key)
+		{ return (ft::make_pair(this->lower_bound(), this->upper_bound())); }
+
+		ft::pair<const_iterator, const_iterator>	equal_range(const key_type &key) const
+		{ return (ft::make_pair(this->lower_bound(), this->upper_bound())); }
+
 		iterator	begin(void)
-		{ return (_data.getIterator(_data.min())); }
+		{ return (_data.getIt(_data.min())); }
+
+		iterator	end(void)
+		{ return (++(_data.getIt(_data.max()))); }
 
 	};
 

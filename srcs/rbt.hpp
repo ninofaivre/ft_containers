@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                       :::      ::::::::    */
-/*   redBlackrbt.hpp                                  :+:      :+:    :+:    */
+/*   rbt.hpp                                           :+:      :+:    :+:    */
 /*                                                   +:+ +:+         +:+      */
 /*   By: nfaivre <nfaivre@student.42.fr>           +#+  +:+       +#+         */
 /*                                               +#+#+#+#+#+   +#+            */
-/*   Created: 2022/09/15 13:13:31 by nfaivre          #+#    #+#              */
-/*   Updated: 2022/09/15 13:13:31 by nfaivre         ###   ########.fr        */
+/*   Created: 2022/09/17 14:14:01 by nfaivre          #+#    #+#              */
+/*   Updated: 2022/09/17 14:14:32 by nfaivre         ###   ########.fr        */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,7 +21,7 @@
 # define RED true
 # define BLACK false
 
-template<class Data, class Alloc>
+template<class Data, class Compare, class Alloc, class Comp = bool(*)(Data, Data, const Compare&)>
 struct node
 {
 
@@ -35,6 +35,8 @@ private:
 	Data			_data;
 	allocator_type	_allocator;
 	bool	_color;
+	Comp	_comp;
+	Compare	_c;
 
 
 public:
@@ -43,8 +45,8 @@ public:
 	node					*_left;
 	node					*_right;
 
-	node(Data d, node *father, allocator_type allocator)
-	: _data(d), _allocator(allocator), _color(RED), _father(father), _left(NULL), _right(NULL) {}
+	node(Data d, node *father, allocator_type allocator, Comp comp, Compare c)
+	: _data(d), _allocator(allocator), _color(RED), _comp(comp), _c(c), _father(father), _left(NULL), _right(NULL) {}
 
 	~node(void)
 	{
@@ -60,11 +62,60 @@ public:
 		}
 	}
 
+	bool	operator==(node &otherInst)
+	{ return (!_comp(_data, otherInst._data, _c) && !_comp(otherInst._data, _data, _c)); }
+
+	bool	operator<(node &otherInst)
+	{ return (_comp(_data, otherInst._data, _c)); }
+
+	bool	operator<=(node &otherInst)
+	{ return (!_comp(otherInst._data, _data, _c)); }
+	
+	bool	operator>(node &otherInst)
+	{ return (_comp(otherInst._data, _data, _c)); }
+
+	bool	operator>=(node &otherInst)
+	{ return (!_comp(_data, otherInst._data, _c)); }
+
 	node	*_getGrandFather(void) const
 	{ return (_father->_father); }
 
 	bool	isLeft(void) const
 	{ return (this == _father->_left); }
+
+	node	*nextNode(void) const
+	{
+		node	*next;
+
+		for(node_type *nd = _father; nd != NULL; nd = nd->_father)
+		{
+			if ((*nd > *_ptr) && (!next || *nd < *next))
+				next = nd;
+		}
+		for(node_type *nd = _right; nd != NULL; nd = nd->_left)
+		{
+			if ((*nd > *_ptr) && (!next || *nd < *next))
+				next = nd;
+		}
+		return (next);
+	}
+
+	node	*prevNode(void) const
+	{
+		node	*prev;
+
+		for(node_type *nd = _ptr->_father; nd != NULL; nd = nd->_father)
+		{
+			if ((*nd < *_ptr) && (!prev || *nd > *prev))
+				prev = nd;
+		}
+		for(node_type *nd = _ptr->_left; nd != NULL; nd = nd->_right)
+		{
+			if ((*nd < *_ptr) && (!prev || *nd > *prev))
+				prev = nd;
+		}
+		return (prev);
+	}
 
 	node	*_getBrother(void) const
 	{ return  (isLeft() ? _father->_right : _father->_left); }
@@ -89,47 +140,51 @@ public:
 
 };
 
-template<class Data, class Alloc, class Comp = bool(*)(Data, Data)>
+template<class Data, class Compare, class Alloc, class Comp = bool(*)(Data, Data, const Compare&)>
 class rbtIterator
 {
 
 private:
 
-	node<Data, Alloc>	*_lastValidPtr;
-	node<Data, Alloc>	*_ptr;
-	Comp				_comp;
+	typedef node<Data, Compare, Alloc, Comp>	node_type;
+
+	node_type	*_lastValidPtr;
+	node_type	*_ptr;
 
 
 public:
 
-	rbtIterator(node<Data, Alloc> *ptr, Comp c)
-	: _lastValidPtr(NULL), _ptr(ptr), _comp(c){}
+	rbtIterator(node_type *ptr = NULL)
+	: _lastValidPtr(NULL), _ptr(ptr) {}
+
+	rbtIterator(const rbtIterator &cpy)
+	: _lastValidPtr(cpy._lastValidPtr), _ptr(cpy._ptr) {}
+
+	rbtIterator	operator=(const rbtIterator &cpy)
+	{
+		_ptr = cpy._ptr;
+		_lastValidPtr = cpy._lastValidPtr;
+		return (*this);
+	}
+
+	bool	operator==(const rbtIterator &otherInst)
+	{ return (_ptr == otherInst._ptr); }
 
 	Data	operator*(void)
 	{ return (_ptr->getData()); }
 
+	Data	*operator->()
+	{ return (&_ptr->getData()); }
+
 	rbtIterator	operator++(void)
 	{
-		node<Data, Alloc>	*next = NULL;
+		node_type	*next = NULL;
 
 		if (_lastValidPtr == _ptr)
 			_lastValidPtr = NULL;
 		if (!_lastValidPtr)
 		{
-			for(node<Data, Alloc> *tmp = _ptr->_father; tmp != NULL; tmp = tmp->_father)
-			{
-				if (!_comp(_ptr->getData(), tmp->getData()))
-					continue ;
-				if (!next || _comp(tmp->getData(), next->getData()))
-					next = tmp;
-			}
-			for(node<Data, Alloc> *tmp = _ptr->_right; tmp != NULL; tmp = tmp->_left)
-			{
-				if (!_comp(_ptr->getData(), tmp->getData()))
-					continue ;
-				if (!next || _comp(tmp->getData(), next->getData()))
-					next = tmp;
-			}
+			next = _ptr->nextNode();	
 			if (!next)
 			{
 				_lastValidPtr = _ptr;
@@ -152,26 +207,13 @@ public:
 
 	rbtIterator	operator--(void)
 	{
-		node<Data, Alloc>	*prev = NULL;
+		node_type	*prev = NULL;
 
 		if (_lastValidPtr == _ptr)
 			_lastValidPtr = NULL;
 		if (!_lastValidPtr)
 		{
-			for(node<Data, Alloc> *tmp = _ptr->_father; tmp != NULL; tmp = tmp->_father)
-			{
-				if (!_comp(tmp->getData(), _ptr->getData()))
-					continue ;
-				if (!prev || _comp(prev->getData(), tmp->getData()))
-					prev = tmp;
-			}
-			for(node<Data, Alloc> *tmp = _ptr->_left; tmp != NULL; tmp = tmp->_right)
-			{
-				if (!_comp(tmp->getData(), _ptr->getData()))
-					continue ;
-				if (!prev || _comp(prev->getData(), tmp->getData()))
-					prev = tmp;
-			}
+			prev = _ptr->prevNode();
 			if (!prev)
 			{
 				_lastValidPtr = _ptr;
@@ -194,38 +236,44 @@ public:
 
 };
 
-template< class Data, class Compare, class Alloc, class Comp = bool(*)(Data, Data)>
+template< class Data, class Compare, class Alloc, class Comp = bool(*)(Data, Data, const Compare&)>
 struct rbt
 {
+
+private:
+
+	typedef node<Data, Compare, Alloc>	node_type;
+
 
 public:
 
 	typedef Data		data_type;
 	typedef std::size_t	size_type;
 
-	typedef typename node<Data, Alloc>::allocator_type	allocator_type;
+	typedef typename node_type::allocator_type	allocator_type;
 
 
 private:
 
-	node<Data, Alloc>	*_root;
+	node_type	*_root;
 	allocator_type				_allocator;
 	Comp	_comp;
+	Compare	_c;
 	size_type	_size;
 
-	static bool	_defaultComp(Data a, Data b)
-	{
-		Compare c;
-		return (c(a, b));
-	}
+	static bool	_defaultComp(Data a, Data b, const Compare &c)
+	{ return (c(a, b)); }
 
 public:
 
-	rbt(Comp comp, allocator_type allocator = allocator_type ())
-	: _root(NULL), _allocator(allocator), _comp(comp), _size(0) {}
+	rbt(Comp comp, Compare c, allocator_type allocator = allocator_type ())
+	: _root(NULL), _allocator(allocator), _comp(comp), _c(c), _size(0) {}
+
+	rbt(Compare c, allocator_type allocator = allocator_type ())
+	: _root(NULL), _allocator(allocator), _comp(_defaultComp), _c(c), _size(0) {}
 
 	rbt(allocator_type allocator = allocator_type ())
-	: _root(NULL), _allocator(allocator), _comp(_defaultComp), _size(0) {}
+	: _root(NULL), _allocator(allocator), _comp(_defaultComp), _c(Comp ()), _size(0) {}
 
 	~rbt(void)
 	{
@@ -239,28 +287,28 @@ public:
 	void	push(Data d)
 	{
 		_size++;
-		node<Data, Alloc> *parent = NULL;
-		node<Data, Alloc> **child = &_root;
+		node_type *parent = NULL;
+		node_type **child = &_root;
 
 		while (*child)
 		{
 			parent = *child;
-			child = _comp(d, (*child)->getData()) ? &(*child)->_left : &(*child)->_right;
+			child = _comp(d, (*child)->getData(), _c) ? &(*child)->_left : &(*child)->_right;
 		}
 		*child = _allocator.allocate(1);
-		_allocator.construct(*child, node<Data, Alloc>(d, parent, _allocator)); 
+		_allocator.construct(*child, node_type (d, parent, _allocator, _comp, _c)); 
 		fixPush(*child);
 	}
 
 	void	pop(Data d)
 	{
-		node<Data, Alloc>	*parent, *child;
-		node<Data, Alloc>	*ndToDelete = search(d);
+		node_type	*parent, *child;
+		node_type	*ndToDelete = search(d);
 		bool	originalColor = _getColor(ndToDelete);
 
 		if (!ndToDelete)
 			return ;
-		node<Data, Alloc>	*y = ndToDelete->_left;
+		node_type	*y = ndToDelete->_left;
 		if (ndToDelete->_left && ndToDelete->_right)
 		{
 			while (y->_right)
@@ -292,56 +340,69 @@ public:
 		fixPop(originalColor, parent, child);
 	}
 
-	node<Data, Alloc>	*search(Data d)
+	node_type	*search(Data d)
 	{
-		node<Data, Alloc>	*nd = _root;
+		node_type	*nd = _root;
 		
-		while (nd && !(!_comp(d, nd->getData()) && !_comp(nd->getData(), d)))
-			nd = _comp(d, nd->getData()) ? nd->_left : nd->_right;
+		while (nd && !(!_comp(d, nd->getData(), _c) && !_comp(nd->getData(), d, _c)))
+			nd = _comp(d, nd->getData(), _c) ? nd->_left : nd->_right;
 		return (nd);
+	}
+
+	std::size_t	count(Data d)
+	{
+		size_t		n = 0;
+		for (node_type	*nd = this->search(d); (nd && (!_comp(d, nd->getData() && !(nd->getData(), d)); nd = nd->_right)
+			n++;
+		return (n);
 	}
 
 	size_type	getSize(void) const
 	{ return (_size); }
 
-	/* A decaler dans rbt iterator
-	node	*prevNode(node *nd)
+	node_type	*min(void) const
 	{
-		node	*prev = NULL;
-		for (node *tmp = nd->_left; tmp != NULL; tmp = tmp->_right)
-		{
-			if (tmp > prev || !prev)
-				prev = tmp;
-		}
-		for (node *tmp = nd->_father; tmp != NULL; tmp = tmp->_father)
-		{
-			if (tmp > prev || !prev)
-				prev = tmp;
-		}
-		return (prev)
-	}
-	*/
-
-	node<Data, Alloc>	*min(void)
-	{
-		node<Data, Alloc>	*nd = _root;
+		node_type	*nd = _root;
 		
 		while (nd && nd->_left)
 			nd = nd->_left;
 		return (nd);
 	}
 
-	node<Data, Alloc>	*max(void)
+	node_type	*max(void) const
 	{
-		node<Data, Alloc>	*nd = _root;
+		node_type	*nd = _root;
 
 		while( nd && nd->_right)
 			nd = nd->_right;
 		return (nd);
 	}
 
-	rbtIterator<Data, Alloc>	getIterator(node<Data, Alloc> *nd)
-	{ return (rbtIterator<Data, Alloc> (nd, _comp)); }
+	rbtIterator<Data, Compare, Alloc>	getIt(node_type *nd) const
+	{
+		if (nd)
+			return (rbtIterator<Data, Compare, Alloc> (nd));
+		else
+			return (++(rbtIterator<Data, Compare, Alloc> (this->max())));
+	}
+
+	node_type	*upper_bound(Data d) const
+	{
+		node_type	*up = this->min();
+
+		while (up && (_comp(up->getData(), d) || !_comp(d, up->get_Data())))
+			up = up->nextNode;
+		return (up);
+	}
+
+	node_type	*lower_bound(Data d) const
+	{
+		node_type	*low = this->min();
+
+		while (low && _comp(low->getData(), d))
+			low = low->nextNode();
+		return (low);
+	}
 
 	/*
 	void	copyOneNode(node<Data, Alloc> *father, node<Data, Alloc> **nd, node<Data, Alloc> *cpyNd)
@@ -380,7 +441,7 @@ public:
 
 private:
 
-	node<Data, Alloc>	*_replace(node<Data, Alloc> *old, node<Data, Alloc> *nd)
+	node_type	*_replace(node_type *old, node_type *nd)
 	{
 		if (nd)
 		{
@@ -408,7 +469,7 @@ private:
 		return (nd);
 	}
 
-	void	_swapColor(node<Data, Alloc>	*lhs, node<Data, Alloc> *rhs)
+	void	_swapColor(node_type	*lhs, node_type *rhs)
 	{
 		bool	tmp = _getColor(rhs);
 
@@ -416,8 +477,7 @@ private:
 		_setColor(lhs, tmp);
 	}
 
-	//siblingBlackNephewsBlack
-	void	siblingBlackNephewsBlack(node<Data, Alloc> *parent, node<Data, Alloc> *sibling)
+	void	siblingBlackNephewsBlack(node_type *parent, node_type *sibling)
 	{
 		_setColor(sibling, RED);
 		if (_getColor(parent) == RED)
@@ -426,8 +486,7 @@ private:
 			fixPop(BLACK, parent->_father, parent);
 	}
 
-	//siblingBlackNearNephewRed parent , chlild , sibling
-	void	siblingBlackNearNephewRed(node<Data, Alloc> *parent, node<Data, Alloc> *child, node<Data, Alloc> *sibling)
+	void	siblingBlackNearNephewRed(node_type *parent, node_type *child, node_type *sibling)
 	{
 		_swapColor(_getNearNephew(parent, child, sibling), sibling);
 		rotate(_getNearNephew(parent, child, sibling), sibling);
@@ -436,21 +495,21 @@ private:
 		siblingBlackFarNephewRed(parent, sibling->_father, _getFarNephew(parent, child, sibling->_father)); // doute tester si fonctionnel
 	}
 
-	void	siblingBlackFarNephewRed(node<Data, Alloc> *parent, node<Data, Alloc> *sibling, node<Data, Alloc> *farNephew)
+	void	siblingBlackFarNephewRed(node_type *parent, node_type *sibling, node_type *farNephew)
 	{
 		_swapColor(sibling, parent);
 		_setColor(farNephew, BLACK);
 		rotate(sibling, parent);
 	}
 
-	void	fixPop(bool originalColor, node<Data, Alloc> *parent, node<Data, Alloc> *child) // originColor fatherOfDB DBside
+	void	fixPop(bool originalColor, node_type *parent, node_type *child)
 	{
 		if (!parent)
 		{
 			_setColor(child, BLACK);
 			return ;
 		}
-		node<Data, Alloc> *sibling = (!child) ? _getOnlyChild(parent) : child->_getBrother();
+		node_type *sibling = (!child) ? _getOnlyChild(parent) : child->_getBrother();
 		if (originalColor == RED)
 			return ;
 		if (_getColor(child) == RED)
@@ -472,7 +531,7 @@ private:
 			siblingBlackFarNephewRed(parent, sibling, _getFarNephew(parent, child, sibling));
 	}
 
-	void	fixPush(node<Data, Alloc> *Z)
+	void	fixPush(node_type *Z)
 	{
 		if (!Z->_father)
 			_setColor(Z, BLACK);
@@ -492,17 +551,17 @@ private:
 		}
 	}
 
-	void	recolor(node<Data, Alloc> *nd)
+	void	recolor(node_type *nd)
 	{
 		_setColor(nd->_father, BLACK);
 		_setColor(nd->_getUncle(), BLACK);
 		_setColor(nd->_getGrandFather(), RED);
 	}
 
-	node<Data, Alloc>	*rotate(node<Data, Alloc> *child, node<Data, Alloc> *parent)
+	node_type	*rotate(node_type *child, node_type *parent)
 	{
-		node<Data, Alloc>	**childRoChild = child->isLeft() ? &child->_right : &child->_left;
-		node<Data, Alloc>	**parentRoChild = child->isLeft() ? &parent->_left : &parent->_right;
+		node_type	**childRoChild = child->isLeft() ? &child->_right : &child->_left;
+		node_type	**parentRoChild = child->isLeft() ? &parent->_left : &parent->_right;
 		child->_father = parent->_father;
 		if (parent->_father)
 			parent->_getParentSidePtr() = child;
@@ -516,19 +575,19 @@ private:
 		return (parent);
 	}
 
-	bool	_getColor(node<Data, Alloc> *nd) const
+	bool	_getColor(node_type *nd) const
 	{ return (nd ? nd->_getColor() : BLACK); }
 
-	node<Data, Alloc>	*_getOnlyChild(node<Data, Alloc> *nd) const
+	node_type	*_getOnlyChild(node_type *nd) const
 	{ return (!nd->_left ? nd->_right : nd->_left); }
 
-	node<Data, Alloc>	*_getFarNephew(node<Data, Alloc> *parent, node<Data, Alloc> *child, node<Data, Alloc> *sibling) const
+	node_type	*_getFarNephew(node_type *parent, node_type *child, node_type *sibling) const
 	{ return (parent->_left == child ? sibling->_right : sibling->_left); }
 
-	node<Data, Alloc> *_getNearNephew(node<Data, Alloc> *parent, node<Data, Alloc> *child, node<Data, Alloc> *sibling) const
+	node_type *_getNearNephew(node_type *parent, node_type *child, node_type *sibling) const
 	{ return (parent->_left == child ? sibling->_left : sibling->_right); }
 
-	void	_setColor(node<Data, Alloc> *nd, bool c) const
+	void	_setColor(node_type *nd, bool c) const
 	{ if (nd) nd->_setColor(c); }
 
 };
