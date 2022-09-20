@@ -2,7 +2,7 @@
 
 .DEFAULT_GOAL = all
 
-CXX = c++
+CXX ?= c++
 CXXFLAGS ?= -Wall -Wextra -Werror -std=c++98
 
 DIR_SRC = ./tests

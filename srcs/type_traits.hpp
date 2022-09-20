@@ -29,9 +29,15 @@ namespace ft
 		operator T() { return (v); }
 	};
 
+	template<class T> struct remove_cv { typedef T type; };
+	template<class T> struct remove_cv<const T> { typedef T type; };
+	template<class T> struct remove_cv<volatile T> { typedef T type; };
+	template<class T> struct remove_cv<const volatile T> { typedef T type; };
+
 	typedef integral_constant<bool, false>	false_type;
 	typedef integral_constant<bool, true>	true_type;
 
+	//si on a le temps try d'utiliser remove_cv
 	template<class T> struct is_integral : false_type {};
 	template<class T> struct is_integral<const T> : is_integral<T> {};
 	template<class T> struct is_integral<volatile T> : is_integral<T> {};

@@ -17,13 +17,14 @@
 # include "iterator.hpp"
 # include <memory>
 # include <functional>
+# include <iostream>
 
 namespace ft
 {
 	template< class Key, class T, class Compare = std::less< Key >, class Allocator = std::allocator< ft::pair<const Key, T> > >
 	class map
 	{
-
+	
 	public:
 
 		typedef Key			key_type;
@@ -36,39 +37,74 @@ namespace ft
 		typedef typename allocator_type::difference_type		difference_type;
 
 		typedef value_type &	reference;
-		typedef const reference	const_reference;
+		typedef const value_type	&const_reference;
 
 		typedef typename allocator_type::pointer	pointer;
 		typedef const pointer						const_pointer;
-		
-		typedef rbtIterator<value_type, key_compare, allocator_type>	iterator;
-		typedef rbtIterator<const value_type, key_compare, allocator_type>	const_iterator;
-		typedef ft::reverse_iterator<iterator>	reverse_iterator;
-		typedef ft::reverse_iterator<const_iterator>	const_reverse_iterator;
 
 
 	private:
 
-		rbt<value_type, key_compare, allocator_type>	_data;
+		class value_compare// public binary_function<value_type, value_type, bool>
+		{
+			friend class map;
+		protected:
+			key_compare comp;
+			value_compare(key_compare c) : comp(c) {};
+		public:
+			bool	operator() (const value_type &a, const value_type &b) const
+			{ return (comp(a.first, b.first)); }
+		};
 
-		static bool	_rbtMapComp(value_type a, value_type b, const key_compare &c)
-		{ return (c(a.first, b.first)); }
-		
+		typedef rbt<value_type, allocator_type, value_compare>	rbt_type;
+
+
+	public:
+				
+		typedef rbtIterator<value_type, allocator_type, value_compare>	iterator;
+		typedef rbtIterator<const value_type, allocator_type, value_compare>	const_iterator;
+		typedef ft::reverse_iterator<iterator>	reverse_iterator;
+		typedef ft::reverse_iterator<const_iterator>	const_reverse_iterator;
+
+
+	public:
+
+		value_compare	value_comp;
+
+	private:
+
+		rbt_type	_data;
+
 		value_type	_keyToPair(const Key &key)
 		{ return (ft::make_pair(key, mapped_type ())); }
 
 
 	public:
-		
-		map(const key_compare &comp = key_compare ())
-		: _data(rbt<value_type, key_compare, allocator_type> (_rbtMapComp, comp)) {};
+
+		explicit map(const key_compare &comp = key_compare (), const allocator_type &alloc = allocator_type())
+		: value_comp(value_compare (comp)), _data(rbt_type (value_comp, alloc)) {}
+
+		template <class InputIt>
+		map(InputIt first, InputIt last, const key_compare &comp = key_compare (), const allocator_type &alloc = allocator_type ())
+		: value_comp(value_compare (comp)), _data(rbt_type (value_comp, alloc))
+		{ this->insert(first, last); }
+
+		/*
+		map(const map &cpy)
+		: value_comp(cpy.value_comp), _data(rbt_type (cpy._data)) {}
+		*/
+
+		key_compare	key_comp(void) const
+		{ return (this->value_comp.comp); }
 
 		mapped_type	&operator[](const Key &key)
-		{
-			if (!_data.search(ft::make_pair(key, mapped_type ())))
-				_data.push(ft::make_pair(key, mapped_type ()));
-			return ((_data.search(ft::make_pair(key, mapped_type ()))->getData()).second);
-		}
+		{ return ((this->insert(_keyToPair(key)).first)->second); }
+
+		mapped_type	&at(const key_type &key)
+		{ return (((_data.search(_keyToPair(key)))->getData()).second); }
+
+		const mapped_type	&at(const key_type &key) const
+		{ return (((_data.search(_keyToPair(key)))->getData()).second); }
 
 		size_type	size(void) const
 		{ return (_data.getSize()); }
@@ -80,10 +116,49 @@ namespace ft
 		{ return (_data.getIt(_data.search(_keyToPair(key)))); }
 
 		size_type	count(const key_type &key) const
-		{ return (_data.count(_keyToPair(key)))}
+		{ return (_data.count(_keyToPair(key))); }
 
 		bool	empty(void) const
 		{ return (!this->size()); }
+
+		ft::pair<iterator, bool> insert(const value_type &value)
+		{
+			iterator it = _data.getIt(_data.search(value));
+			if (it == this->end())
+				return (ft::make_pair(_data.getIt(_data.push(value)), true));
+			return (ft::make_pair(it, false));
+		}
+
+		ft::pair<iterator, bool> insert(iterator hint, const value_type &value)
+		{ static_cast<void> (hint); return (insert(value)); }
+
+		iterator	erase(iterator pos)
+		{
+			iterator it = pos;
+			it++;
+			_data.pop(*pos);
+			return (it);
+		}
+
+		iterator	erase(iterator first, iterator last)
+		{
+			while (first != last)
+				erase(first++);
+			return (last);
+		}
+
+		size_type	erase(const key_type &key)
+		{ return (_data.pop(_keyToPair(key))); }
+
+		void	clear(void)
+		{ erase(this->begin(), this->end()); }
+
+		template<class InputIt>
+		void	insert(InputIt first, InputIt last)
+		{
+			while (first != last)
+				this->insert(*first++);
+		}
 
 		iterator	upper_bound(const key_type &key)
 		{ return (_data.getIt(_data.upper_bound(_keyToPair(key)))); }
@@ -98,16 +173,34 @@ namespace ft
 		{ return (_data.getIt(_data.lower_bound(_keyToPair(key)))); }
 
 		ft::pair<iterator, iterator>	equal_range(const key_type &key)
-		{ return (ft::make_pair(this->lower_bound(), this->upper_bound())); }
+		{ return (ft::make_pair(this->lower_bound(key), this->upper_bound(key))); }
 
 		ft::pair<const_iterator, const_iterator>	equal_range(const key_type &key) const
-		{ return (ft::make_pair(this->lower_bound(), this->upper_bound())); }
+		{ return (ft::make_pair(this->lower_bound(key), this->upper_bound(key))); }
 
 		iterator	begin(void)
 		{ return (_data.getIt(_data.min())); }
 
+		const_iterator	begin(void) const
+		{ return (_data.getIt(_data.min())); }
+
 		iterator	end(void)
 		{ return (++(_data.getIt(_data.max()))); }
+
+		const_iterator	end(void) const
+		{ return (++(_data.getIt(_data.max()))); }
+
+		reverse_iterator	rbegin(void)
+		{ return (_data.getIt(_data.max())); }
+
+		const_reverse_iterator	rbegin(void) const
+		{ return (_data.getIt(_data.max())); }
+
+		reverse_iterator	rend(void)
+		{ return (--(_data.getIt(_data.min()))); }
+
+		const_reverse_iterator	rend(void) const
+		{ return (--(_data.getIt(_data.min()))); }
 
 	};
 

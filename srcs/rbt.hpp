@@ -13,6 +13,7 @@
 #pragma once
 
 # include "utility.hpp"
+# include "type_traits.hpp"
 # include <memory>
 # include <cstddef>
 # include <functional>
@@ -21,13 +22,13 @@
 # define RED true
 # define BLACK false
 
-template<class Data, class Compare, class Alloc, class Comp = bool(*)(Data, Data, const Compare&)>
+template<class Data, class Alloc, class Comp>
 struct node
 {
 
 public:
 
-	typedef typename Alloc::rebind<node>::other			allocator_type;
+	typedef typename Alloc::template rebind<node>::other			allocator_type;
 
 
 private:
@@ -35,8 +36,7 @@ private:
 	Data			_data;
 	allocator_type	_allocator;
 	bool	_color;
-	Comp	_comp;
-	Compare	_c;
+	Comp	&_comp;
 
 
 public:
@@ -45,8 +45,8 @@ public:
 	node					*_left;
 	node					*_right;
 
-	node(Data d, node *father, allocator_type allocator, Comp comp, Compare c)
-	: _data(d), _allocator(allocator), _color(RED), _comp(comp), _c(c), _father(father), _left(NULL), _right(NULL) {}
+	node(Data d, node *father, allocator_type allocator, Comp &comp)
+	: _data(d), _allocator(allocator), _color(RED), _comp(comp), _father(father), _left(NULL), _right(NULL) {}
 
 	~node(void)
 	{
@@ -63,19 +63,19 @@ public:
 	}
 
 	bool	operator==(node &otherInst)
-	{ return (!_comp(_data, otherInst._data, _c) && !_comp(otherInst._data, _data, _c)); }
+	{ return (!_comp(_data, otherInst._data) && !_comp(otherInst._data, _data)); }
 
 	bool	operator<(node &otherInst)
-	{ return (_comp(_data, otherInst._data, _c)); }
+	{ return (_comp(_data, otherInst._data)); }
 
 	bool	operator<=(node &otherInst)
-	{ return (!_comp(otherInst._data, _data, _c)); }
+	{ return (!_comp(otherInst._data, _data)); }
 	
 	bool	operator>(node &otherInst)
-	{ return (_comp(otherInst._data, _data, _c)); }
+	{ return (_comp(otherInst._data, _data)); }
 
 	bool	operator>=(node &otherInst)
-	{ return (!_comp(_data, otherInst._data, _c)); }
+	{ return (!_comp(_data, otherInst._data)); }
 
 	node	*_getGrandFather(void) const
 	{ return (_father->_father); }
@@ -83,35 +83,35 @@ public:
 	bool	isLeft(void) const
 	{ return (this == _father->_left); }
 
-	node	*nextNode(void) const
+	node	*nextNode(void)
 	{
-		node	*next;
+		node	*next = NULL;
 
-		for(node_type *nd = _father; nd != NULL; nd = nd->_father)
+		for (node *nd = _father; nd != NULL; nd = nd->_father)
 		{
-			if ((*nd > *_ptr) && (!next || *nd < *next))
+			if ((*nd > *this) && (!next || *nd < *next))
 				next = nd;
 		}
-		for(node_type *nd = _right; nd != NULL; nd = nd->_left)
+		for (node *nd = _right; nd != NULL; nd = nd->_left)
 		{
-			if ((*nd > *_ptr) && (!next || *nd < *next))
+			if ((*nd > *this) && (!next || *nd < *next))
 				next = nd;
 		}
 		return (next);
 	}
 
-	node	*prevNode(void) const
+	node	*prevNode(void)
 	{
-		node	*prev;
+		node	*prev = NULL;
 
-		for(node_type *nd = _ptr->_father; nd != NULL; nd = nd->_father)
+		for(node *nd = this->_father; nd != NULL; nd = nd->_father)
 		{
-			if ((*nd < *_ptr) && (!prev || *nd > *prev))
+			if ((*nd < *this) && (!prev || *nd > *prev))
 				prev = nd;
 		}
-		for(node_type *nd = _ptr->_left; nd != NULL; nd = nd->_right)
+		for(node *nd = this->_left; nd != NULL; nd = nd->_right)
 		{
-			if ((*nd < *_ptr) && (!prev || *nd > *prev))
+			if ((*nd < *this) && (!prev || *nd > *prev))
 				prev = nd;
 		}
 		return (prev);
@@ -140,35 +140,35 @@ public:
 
 };
 
-template<class Data, class Compare, class Alloc, class Comp = bool(*)(Data, Data, const Compare&)>
+template<class Data, class Alloc, class Comp>
 class rbtIterator
 {
 
 private:
 
-	typedef node<Data, Compare, Alloc, Comp>	node_type;
+	typedef typename ft::remove_cv<Data>::type	non_const_Data;
+	typedef node< non_const_Data, Alloc, Comp>	node_type;
 
-	node_type	*_lastValidPtr;
 	node_type	*_ptr;
+	node_type	*_lastValidPtr;
 
 
 public:
 
-	rbtIterator(node_type *ptr = NULL)
-	: _lastValidPtr(NULL), _ptr(ptr) {}
+	rbtIterator(node_type *ptr = NULL, node_type *lastValidPtr = NULL)
+	: _ptr(ptr), _lastValidPtr(lastValidPtr) {}
 
 	rbtIterator(const rbtIterator &cpy)
-	: _lastValidPtr(cpy._lastValidPtr), _ptr(cpy._ptr) {}
+	: _ptr(cpy._ptr), _lastValidPtr(cpy._lastValidPtr) {}
 
-	rbtIterator	operator=(const rbtIterator &cpy)
-	{
-		_ptr = cpy._ptr;
-		_lastValidPtr = cpy._lastValidPtr;
-		return (*this);
-	}
+	operator rbtIterator<const Data, Alloc, Comp> () const
+	{ return (rbtIterator<const Data, Alloc, Comp> (_ptr, _lastValidPtr)); }
 
 	bool	operator==(const rbtIterator &otherInst)
 	{ return (_ptr == otherInst._ptr); }
+	
+	bool	operator!=(const rbtIterator &otherInst)
+	{ return (_ptr != otherInst._ptr); }
 
 	Data	operator*(void)
 	{ return (_ptr->getData()); }
@@ -184,6 +184,8 @@ public:
 			_lastValidPtr = NULL;
 		if (!_lastValidPtr)
 		{
+			if (!_ptr)
+				return (*this);
 			next = _ptr->nextNode();	
 			if (!next)
 			{
@@ -213,6 +215,8 @@ public:
 			_lastValidPtr = NULL;
 		if (!_lastValidPtr)
 		{
+			if (!_ptr)
+				return (*this);
 			prev = _ptr->prevNode();
 			if (!prev)
 			{
@@ -236,13 +240,15 @@ public:
 
 };
 
-template< class Data, class Compare, class Alloc, class Comp = bool(*)(Data, Data, const Compare&)>
+template< class Data, class Alloc = std::allocator< Data > , class Comp = std::less< Data > >
 struct rbt
 {
 
 private:
 
-	typedef node<Data, Compare, Alloc>	node_type;
+	typedef node<Data, Alloc, Comp>	node_type;
+	typedef rbtIterator<Data, Alloc, Comp> iterator;
+	typedef rbtIterator<const Data, Alloc, Comp> const_iterator;
 
 
 public:
@@ -257,23 +263,17 @@ private:
 
 	node_type	*_root;
 	allocator_type				_allocator;
-	Comp	_comp;
-	Compare	_c;
+	Comp	&_comp;
 	size_type	_size;
 
-	static bool	_defaultComp(Data a, Data b, const Compare &c)
-	{ return (c(a, b)); }
 
 public:
 
-	rbt(Comp comp, Compare c, allocator_type allocator = allocator_type ())
-	: _root(NULL), _allocator(allocator), _comp(comp), _c(c), _size(0) {}
+	rbt(Comp &comp = Comp (), allocator_type allocator = allocator_type ())
+	: _root(NULL), _allocator(allocator), _comp(comp), _size(0) {}
 
-	rbt(Compare c, allocator_type allocator = allocator_type ())
-	: _root(NULL), _allocator(allocator), _comp(_defaultComp), _c(c), _size(0) {}
-
-	rbt(allocator_type allocator = allocator_type ())
-	: _root(NULL), _allocator(allocator), _comp(_defaultComp), _c(Comp ()), _size(0) {}
+	rbt(allocator_type allocator)
+	: _root(NULL), _allocator(allocator), _comp(Comp ()), _size(0) {}
 
 	~rbt(void)
 	{
@@ -284,7 +284,7 @@ public:
 		}
 	}
 
-	void	push(Data d)
+	node_type	*push(Data d)
 	{
 		_size++;
 		node_type *parent = NULL;
@@ -293,21 +293,23 @@ public:
 		while (*child)
 		{
 			parent = *child;
-			child = _comp(d, (*child)->getData(), _c) ? &(*child)->_left : &(*child)->_right;
+			child = _comp(d, (*child)->getData()) ? &(*child)->_left : &(*child)->_right;
 		}
 		*child = _allocator.allocate(1);
-		_allocator.construct(*child, node_type (d, parent, _allocator, _comp, _c)); 
+		_allocator.construct(*child, node_type (d, parent, _allocator, _comp)); 
 		fixPush(*child);
+		return (*child);
 	}
 
-	void	pop(Data d)
+	bool	pop(Data d)
 	{
 		node_type	*parent, *child;
 		node_type	*ndToDelete = search(d);
 		bool	originalColor = _getColor(ndToDelete);
 
 		if (!ndToDelete)
-			return ;
+			return (false);
+		_size--;
 		node_type	*y = ndToDelete->_left;
 		if (ndToDelete->_left && ndToDelete->_right)
 		{
@@ -338,21 +340,22 @@ public:
 			_replace(ndToDelete, _getOnlyChild(ndToDelete));
 		}
 		fixPop(originalColor, parent, child);
+		return (true);
 	}
 
 	node_type	*search(Data d)
 	{
 		node_type	*nd = _root;
 		
-		while (nd && !(!_comp(d, nd->getData(), _c) && !_comp(nd->getData(), d, _c)))
-			nd = _comp(d, nd->getData(), _c) ? nd->_left : nd->_right;
+		while (nd && !(!_comp(d, nd->getData()) && !_comp(nd->getData(), d)))
+			nd = _comp(d, nd->getData()) ? nd->_left : nd->_right;
 		return (nd);
 	}
 
 	std::size_t	count(Data d)
 	{
 		size_t		n = 0;
-		for (node_type	*nd = this->search(d); (nd && (!_comp(d, nd->getData() && !(nd->getData(), d)); nd = nd->_right)
+		for (node_type	*nd = this->search(d); (nd && (!_comp(d, nd->getData()) && !(nd->getData(), d))); nd = nd->_right)
 			n++;
 		return (n);
 	}
@@ -378,13 +381,11 @@ public:
 		return (nd);
 	}
 
-	rbtIterator<Data, Compare, Alloc>	getIt(node_type *nd) const
-	{
-		if (nd)
-			return (rbtIterator<Data, Compare, Alloc> (nd));
-		else
-			return (++(rbtIterator<Data, Compare, Alloc> (this->max())));
-	}
+	iterator	getIt(node_type *nd)
+	{ return (nd ? iterator (nd) : ++(iterator (this->max()))); }
+
+	const_iterator	getIt(node_type *nd) const
+	{ return (nd ? const_iterator (nd) : ++(const_iterator (this->max()))); }
 
 	node_type	*upper_bound(Data d) const
 	{
