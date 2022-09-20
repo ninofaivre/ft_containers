@@ -28,13 +28,15 @@ struct node
 
 public:
 
-	typedef typename Alloc::template rebind<node>::other			allocator_type;
+	typedef Alloc	dataAllocator_type;
+	typedef typename Alloc::template rebind<node>::other	nodeAllocator_type;
 
 
 private:
 
 	Data			_data;
-	allocator_type	_allocator;
+	dataAllocator_type	&_dataAllocator;
+	nodeAllocator_type	&_nodeAllocator;
 	bool	_color;
 	Comp	&_comp;
 
@@ -45,21 +47,32 @@ public:
 	node					*_left;
 	node					*_right;
 
-	node(Data d, node *father, allocator_type allocator, Comp &comp)
-	: _data(d), _allocator(allocator), _color(RED), _comp(comp), _father(father), _left(NULL), _right(NULL) {}
+	node(Data d, node *father, dataAllocator_type &dataAllocator, nodeAllocator_type &nodeAllocator, Comp &comp)
+	: _data(d), _dataAllocator(dataAllocator), _nodeAllocator(nodeAllocator), _color(RED), _comp(comp), _father(father), _left(NULL), _right(NULL) {}
 
 	~node(void)
 	{
 		if (_left)
 		{
-			_allocator.destroy(_left);
-			_allocator.deallocate(_left, 1);
+			_nodeAllocator.destroy(_left);
+			_nodeAllocator.deallocate(_left, 1);
 		}
 		if (_right)
 		{
-			_allocator.destroy(_right);
-			_allocator.deallocate(_right, 1);
+			_nodeAllocator.destroy(_right);
+			_nodeAllocator.deallocate(_right, 1);
 		}
+	}
+
+	node	operator=(node &otherInst)
+	{
+		_dataAllocator.destroy(&_data);
+		_dataAllocator.construct(&_data, otherInst._data);
+		_color = otherInst._color;
+		_nodeAllocator = otherInst._nodeAllocator;
+		_dataAllocator = otherInst._dataAllocator;
+		_comp = otherInst._comp;
+		return (*this);
 	}
 
 	bool	operator==(node &otherInst)
@@ -256,31 +269,37 @@ public:
 	typedef Data		data_type;
 	typedef std::size_t	size_type;
 
-	typedef typename node_type::allocator_type	allocator_type;
+	typedef typename node_type::nodeAllocator_type	nodeAllocator_type;
+	typedef typename node_type::dataAllocator_type	dataAllocator_type;
 
 
 private:
 
 	node_type	*_root;
-	allocator_type				_allocator;
+	dataAllocator_type	_dataAllocator;
+	nodeAllocator_type	_nodeAllocator;
 	Comp	&_comp;
 	size_type	_size;
 
 
 public:
 
-	rbt(Comp &comp = Comp (), allocator_type allocator = allocator_type ())
-	: _root(NULL), _allocator(allocator), _comp(comp), _size(0) {}
+	rbt(Comp &comp = Comp (), dataAllocator_type dataAllocator = dataAllocator_type ())
+	: _root(NULL), _dataAllocator(dataAllocator), _nodeAllocator(dataAllocator), _comp(comp), _size(0) {}
 
-	rbt(allocator_type allocator)
-	: _root(NULL), _allocator(allocator), _comp(Comp ()), _size(0) {}
+	rbt(dataAllocator_type dataAllocator)
+	: _root(NULL), _dataAllocator(dataAllocator), _nodeAllocator(dataAllocator), _comp(Comp ()), _size(0) {}
+
+	rbt(const rbt &cpy)
+	: _dataAllocator(cpy._dataAllocator), _nodeAllocator(cpy._nodeAllocator), _comp(cpy._comp), _size(cpy._size)
+	{ this->copy(cpy); }
 
 	~rbt(void)
 	{
 		if (_root)
 		{
-			_allocator.destroy(_root);
-			_allocator.deallocate(_root, 1);
+			_nodeAllocator.destroy(_root);
+			_nodeAllocator.deallocate(_root, 1);
 		}
 	}
 
@@ -295,8 +314,8 @@ public:
 			parent = *child;
 			child = _comp(d, (*child)->getData()) ? &(*child)->_left : &(*child)->_right;
 		}
-		*child = _allocator.allocate(1);
-		_allocator.construct(*child, node_type (d, parent, _allocator, _comp)); 
+		*child = _nodeAllocator.allocate(1);
+		_nodeAllocator.construct(*child, node_type (d, parent, _dataAllocator, _nodeAllocator, _comp)); 
 		fixPush(*child);
 		return (*child);
 	}
@@ -405,29 +424,26 @@ public:
 		return (low);
 	}
 
-	/*
-	void	copyOneNode(node<Data, Alloc> *father, node<Data, Alloc> **nd, node<Data, Alloc> *cpyNd)
+	void	copyOneNode(node_type *father, node_type **nd, node_type *cpyNd)
 	{
 		if (!*nd)
 		{
-			*nd = _allocator.allocate(1);
-			_allocator.construct(*nd, node<Data, Alloc> (cpyNd->getData(), father, _allocator));
-			nd->_setColor(cpyNd->getColor);
+			*nd = _nodeAllocator.allocate(1);
+			_nodeAllocator.construct(*nd, node_type (cpyNd->getData(), father, _dataAllocator, _nodeAllocator, _comp));
 		}
-		else
-		{
-			(*nd)->_setColor(cpyNd->getColor);
-			(*nd)->setData(cpyNd->getData());
-		}
+		**nd = *cpyNd;
 	}
 
-	void	recCopy(node<Data, Alloc> *father, node<Data, Alloc> **nd, node<Data, Alloc> *cpyNd)
+	void	recCopy(node_type *father, node_type **nd, node_type *cpyNd)
 	{
-		if (!cpyNd && *nd)
+		if (!cpyNd && !*nd)
+			return ;
+		else if (!cpyNd && *nd)
 		{
-			//metre le pointeur vers nd sur le père de nd à NULL
-			_allocator.destroy(*nd);
-			_allocator.deallocate(*nd, 1);
+			if (father)
+				(*nd)->_getParentSidePtr() = NULL;
+			_nodeAllocator.destroy(*nd);
+			_nodeAllocator.deallocate(*nd, 1);
 			return ;
 		}
 		copyOneNode(father, nd, cpyNd);
@@ -437,7 +453,6 @@ public:
 
 	void	copy(const rbt &cpy)
 	{ recCopy(NULL, &_root, cpy._root); }
-	*/
 
 
 private:
@@ -465,8 +480,8 @@ private:
 			_root = nd;
 		old->_left = NULL;
 		old->_right = NULL;
-		_allocator.destroy(old);
-		_allocator.deallocate(old, 1);
+		_nodeAllocator.destroy(old);
+		_nodeAllocator.deallocate(old, 1);
 		return (nd);
 	}
 

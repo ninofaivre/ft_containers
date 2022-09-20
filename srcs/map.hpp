@@ -81,7 +81,7 @@ namespace ft
 
 	public:
 
-		explicit map(const key_compare &comp = key_compare (), const allocator_type &alloc = allocator_type())
+		explicit map(const key_compare &comp = key_compare (), const allocator_type &alloc = allocator_type ())
 		: value_comp(value_compare (comp)), _data(rbt_type (value_comp, alloc)) {}
 
 		template <class InputIt>
@@ -89,10 +89,8 @@ namespace ft
 		: value_comp(value_compare (comp)), _data(rbt_type (value_comp, alloc))
 		{ this->insert(first, last); }
 
-		/*
 		map(const map &cpy)
 		: value_comp(cpy.value_comp), _data(rbt_type (cpy._data)) {}
-		*/
 
 		key_compare	key_comp(void) const
 		{ return (this->value_comp.comp); }
