@@ -14,65 +14,54 @@
 
 # include "utility.hpp"
 # include "type_traits.hpp"
+# include "iterator.hpp"
 # include <memory>
 # include <cstddef>
 # include <functional>
+# include <limits>
 
 //enum { RED, BLACK };
 # define RED true
 # define BLACK false
+
+#include <iostream>
 
 template<class Data, class Alloc, class Comp>
 struct node
 {
 
 public:
-
-	typedef Alloc	dataAllocator_type;
-	typedef typename Alloc::template rebind<node>::other	nodeAllocator_type;
-
+	
+	typedef Data	value_type;
 
 private:
 
-	Data			_data;
-	dataAllocator_type	&_dataAllocator;
-	nodeAllocator_type	&_nodeAllocator;
+	Comp	_comp;
 	bool	_color;
-	Comp	&_comp;
 
 
 public:
 
-	node					*_father;
-	node					*_left;
-	node					*_right;
+	node	*_father;
+	node	*_left;
+	node	*_right;
 
-	node(Data d, node *father, dataAllocator_type &dataAllocator, nodeAllocator_type &nodeAllocator, Comp &comp)
-	: _data(d), _dataAllocator(dataAllocator), _nodeAllocator(nodeAllocator), _color(RED), _comp(comp), _father(father), _left(NULL), _right(NULL) {}
+private:
 
-	~node(void)
+	Data	_data;
+
+public:
+
+	node(Data d, node *father, Comp comp)
+	: _comp(comp), _color(RED), _father(father), _left(NULL), _right(NULL), _data(d) {}
+
+	//voir si peut être remplacé par operator '='
+	void	copy(node &otherInst, Alloc &alloc)
 	{
-		if (_left)
-		{
-			_nodeAllocator.destroy(_left);
-			_nodeAllocator.deallocate(_left, 1);
-		}
-		if (_right)
-		{
-			_nodeAllocator.destroy(_right);
-			_nodeAllocator.deallocate(_right, 1);
-		}
-	}
-
-	node	operator=(node &otherInst)
-	{
-		_dataAllocator.destroy(&_data);
-		_dataAllocator.construct(&_data, otherInst._data);
+		alloc.destroy(&_data);
+		alloc.construct(&_data, Data(otherInst.getData()));
 		_color = otherInst._color;
-		_nodeAllocator = otherInst._nodeAllocator;
-		_dataAllocator = otherInst._dataAllocator;
 		_comp = otherInst._comp;
-		return (*this);
 	}
 
 	bool	operator==(node &otherInst)
@@ -153,55 +142,75 @@ public:
 
 };
 
-template<class Data, class Alloc, class Comp>
+template<class Data, class Node>
 class rbtIterator
 {
 
+public:
+
+	typedef ft::bidirectional_iterator_tag	iterator_category;
+	typedef typename Node::value_type		value_type;
+	typedef ptrdiff_t						difference_type;
+	typedef Data *							pointer;
+	typedef Data &							reference;
+
 private:
 
-	typedef typename ft::remove_cv<Data>::type	non_const_Data;
-	typedef node< non_const_Data, Alloc, Comp>	node_type;
+	typedef Node	node_type;
 
+	node_type	*const*_root;
 	node_type	*_ptr;
 	node_type	*_lastValidPtr;
+	bool		_end;
 
 
 public:
 
-	rbtIterator(node_type *ptr = NULL, node_type *lastValidPtr = NULL)
-	: _ptr(ptr), _lastValidPtr(lastValidPtr) {}
+	rbtIterator(node_type *const*root = NULL, node_type *ptr = NULL, bool end = false, node_type *lastValidPtr = NULL)
+	: _root(root), _ptr(ptr), _lastValidPtr(lastValidPtr), _end(end) {}
 
 	rbtIterator(const rbtIterator &cpy)
-	: _ptr(cpy._ptr), _lastValidPtr(cpy._lastValidPtr) {}
+	: _root(cpy._root), _ptr(cpy._ptr), _lastValidPtr(cpy._lastValidPtr), _end(cpy._end) {}
 
-	operator rbtIterator<const Data, Alloc, Comp> () const
-	{ return (rbtIterator<const Data, Alloc, Comp> (_ptr, _lastValidPtr)); }
-
-	bool	operator==(const rbtIterator &otherInst)
-	{ return (_ptr == otherInst._ptr); }
+	operator rbtIterator<const Data, Node> () const
+	{ return (rbtIterator<const Data, Node> (_root, _ptr, _end, _lastValidPtr)); }
+ 
+	bool	operator==(const rbtIterator &otherInst) const
+	{
+		if (_end && otherInst._end)
+			return (true);
+		return (_ptr == otherInst._ptr && _end == otherInst._end);
+	}
 	
-	bool	operator!=(const rbtIterator &otherInst)
-	{ return (_ptr != otherInst._ptr); }
+	bool	operator!=(const rbtIterator &otherInst) const
+	{
+		if (_end && otherInst._end)
+			return (false);
+		return (_ptr != otherInst._ptr || _end != otherInst._end);
+	}
 
-	Data	operator*(void)
+	reference	operator*(void) const
 	{ return (_ptr->getData()); }
 
-	Data	*operator->()
-	{ return (&_ptr->getData()); }
+	pointer	operator->() const
+	{
+		return (&_ptr->getData());
+	}
 
-	rbtIterator	operator++(void)
+	rbtIterator	&operator++(void)
 	{
 		node_type	*next = NULL;
 
 		if (_lastValidPtr == _ptr)
 			_lastValidPtr = NULL;
-		if (!_lastValidPtr)
+		if (!_lastValidPtr && !_end)
 		{
 			if (!_ptr)
 				return (*this);
-			next = _ptr->nextNode();	
+			next = _ptr->nextNode();
 			if (!next)
 			{
+				_end = true;
 				_lastValidPtr = _ptr;
 				_ptr++;
 			}
@@ -209,7 +218,10 @@ public:
 				_ptr = next;
 		}
 		else
+		{
+			_end = false;
 			_ptr++;
+		}
 		return (*this);
 	}
 
@@ -220,13 +232,29 @@ public:
 		return (tmp);
 	}
 
-	rbtIterator	operator--(void)
+	void	endCase(void)
+	{
+		_ptr = *_root;
+		while (_ptr && _ptr->_right)
+			_ptr = _ptr->_right;
+		_end = false;
+	}
+
+	rbtIterator	&operator--(void)
 	{
 		node_type	*prev = NULL;
 
+		if (_end)
+		{
+			this->endCase();
+			return (*this);
+		}
 		if (_lastValidPtr == _ptr)
+		{
 			_lastValidPtr = NULL;
-		if (!_lastValidPtr)
+			_end = true;
+		}
+		if (!_lastValidPtr && !_end)
 		{
 			if (!_ptr)
 				return (*this);
@@ -259,47 +287,94 @@ struct rbt
 
 private:
 
-	typedef node<Data, Alloc, Comp>	node_type;
-	typedef rbtIterator<Data, Alloc, Comp> iterator;
-	typedef rbtIterator<const Data, Alloc, Comp> const_iterator;
+	typedef Alloc									dataAllocator_type;
+	typedef node<Data, dataAllocator_type, Comp>	node_type;
 
 
 public:
 
 	typedef Data		data_type;
 	typedef std::size_t	size_type;
+	typedef rbtIterator<Data, node_type>			iterator;
+	typedef rbtIterator<const Data, node_type>		const_iterator;
 
-	typedef typename node_type::nodeAllocator_type	nodeAllocator_type;
-	typedef typename node_type::dataAllocator_type	dataAllocator_type;
+	typedef typename Alloc::template rebind< node_type >::other	nodeAllocator_type;
 
 
 private:
 
-	node_type	*_root;
+	node_type			*_root;
 	dataAllocator_type	_dataAllocator;
 	nodeAllocator_type	_nodeAllocator;
-	Comp	&_comp;
-	size_type	_size;
+	Comp				_comp;
+	size_type			_size;
 
 
 public:
 
-	rbt(Comp &comp = Comp (), dataAllocator_type dataAllocator = dataAllocator_type ())
+	rbt(const Comp &comp = Comp (), const dataAllocator_type &dataAllocator = dataAllocator_type ())
 	: _root(NULL), _dataAllocator(dataAllocator), _nodeAllocator(dataAllocator), _comp(comp), _size(0) {}
 
-	rbt(dataAllocator_type dataAllocator)
+	rbt(const dataAllocator_type &dataAllocator)
 	: _root(NULL), _dataAllocator(dataAllocator), _nodeAllocator(dataAllocator), _comp(Comp ()), _size(0) {}
 
 	rbt(const rbt &cpy)
-	: _dataAllocator(cpy._dataAllocator), _nodeAllocator(cpy._nodeAllocator), _comp(cpy._comp), _size(cpy._size)
+	: _root(NULL), _dataAllocator(cpy._dataAllocator), _nodeAllocator(cpy._nodeAllocator), _comp(cpy._comp), _size(cpy._size)
 	{ this->copy(cpy); }
 
 	~rbt(void)
 	{
 		if (_root)
+			destroySubTree(_root);
+	}
+
+	Comp	value_comp(void) const
+	{ return (_comp); }
+
+	size_type	max_size(void) const
+	{ return (_nodeAllocator.max_size()); }
+
+	void	deleteNode(node_type *nd)
+	{
+		_nodeAllocator.destroy(nd);
+		_nodeAllocator.deallocate(nd, 1);
+	}
+
+	void	destroySubTree(node_type *nd)
+	{
+		if (!nd)
+			return ;
+		destroySubTree(nd->_left);
+		destroySubTree(nd->_right);
+		deleteNode(nd);
+	}
+
+	void	swap(rbt &swp)
+	{
 		{
-			_nodeAllocator.destroy(_root);
-			_nodeAllocator.deallocate(_root, 1);
+			node_type	*tmp = _root;
+			_root = swp._root;
+			swp._root = tmp;
+		}
+		{
+			dataAllocator_type	tmp = _dataAllocator;
+			_dataAllocator = swp._dataAllocator;
+			swp._dataAllocator = tmp;
+		}
+		{
+			nodeAllocator_type	tmp = _nodeAllocator;
+			_nodeAllocator = swp._nodeAllocator;
+			swp._nodeAllocator = tmp;
+		}
+		{
+			size_type	tmp = _size;
+			_size = swp._size;
+			swp._size = tmp;
+		}
+		{
+			Comp	tmp = _comp;
+			_comp = swp._comp;
+			swp._comp = tmp;
 		}
 	}
 
@@ -315,7 +390,7 @@ public:
 			child = _comp(d, (*child)->getData()) ? &(*child)->_left : &(*child)->_right;
 		}
 		*child = _nodeAllocator.allocate(1);
-		_nodeAllocator.construct(*child, node_type (d, parent, _dataAllocator, _nodeAllocator, _comp)); 
+		_nodeAllocator.construct(*child, node_type (d, parent, _comp)); 
 		fixPush(*child);
 		return (*child);
 	}
@@ -362,7 +437,7 @@ public:
 		return (true);
 	}
 
-	node_type	*search(Data d)
+	node_type	*search(Data d) const
 	{
 		node_type	*nd = _root;
 		
@@ -371,10 +446,10 @@ public:
 		return (nd);
 	}
 
-	std::size_t	count(Data d)
+	std::size_t	count(Data d) const
 	{
 		size_t		n = 0;
-		for (node_type	*nd = this->search(d); (nd && (!_comp(d, nd->getData()) && !(nd->getData(), d))); nd = nd->_right)
+		for (node_type	*nd = this->search(d); (nd && (!_comp(d, nd->getData()) && !_comp(nd->getData(), d))); nd = nd->_right)
 			n++;
 		return (n);
 	}
@@ -400,18 +475,24 @@ public:
 		return (nd);
 	}
 
+	iterator	getEnd(void)
+	{ return (iterator (&_root, NULL, true)); }
+
+	const_iterator	getEnd(void) const
+	{ return (iterator (&_root, NULL, true)); }
+
 	iterator	getIt(node_type *nd)
-	{ return (nd ? iterator (nd) : ++(iterator (this->max()))); }
+	{ return (nd ? iterator (&_root, nd) : getEnd()); }
 
 	const_iterator	getIt(node_type *nd) const
-	{ return (nd ? const_iterator (nd) : ++(const_iterator (this->max()))); }
+	{ return (nd ? const_iterator (&_root, nd) : getEnd()); }
 
 	node_type	*upper_bound(Data d) const
 	{
 		node_type	*up = this->min();
 
-		while (up && (_comp(up->getData(), d) || !_comp(d, up->get_Data())))
-			up = up->nextNode;
+		while (up && (_comp(up->getData(), d) || !_comp(d, up->getData())))
+			up = up->nextNode();
 		return (up);
 	}
 
@@ -426,24 +507,22 @@ public:
 
 	void	copyOneNode(node_type *father, node_type **nd, node_type *cpyNd)
 	{
-		if (!*nd)
+		if (!(*nd))
 		{
 			*nd = _nodeAllocator.allocate(1);
-			_nodeAllocator.construct(*nd, node_type (cpyNd->getData(), father, _dataAllocator, _nodeAllocator, _comp));
+			_nodeAllocator.construct(*nd, node_type (cpyNd->getData(), father, _comp));
 		}
-		**nd = *cpyNd;
+		(*nd)->copy(*cpyNd, _dataAllocator);
 	}
 
 	void	recCopy(node_type *father, node_type **nd, node_type *cpyNd)
 	{
 		if (!cpyNd && !*nd)
 			return ;
-		else if (!cpyNd && *nd)
+		if (!cpyNd && *nd)
 		{
-			if (father)
-				(*nd)->_getParentSidePtr() = NULL;
-			_nodeAllocator.destroy(*nd);
-			_nodeAllocator.deallocate(*nd, 1);
+			destroySubTree(*nd);
+			*nd = NULL;
 			return ;
 		}
 		copyOneNode(father, nd, cpyNd);
@@ -452,7 +531,12 @@ public:
 	}
 
 	void	copy(const rbt &cpy)
-	{ recCopy(NULL, &_root, cpy._root); }
+	{
+		_dataAllocator = cpy._dataAllocator;
+		_nodeAllocator = cpy._nodeAllocator;
+		_size = cpy._size;
+		recCopy(NULL, &_root, cpy._root);
+	}
 
 
 private:
@@ -480,8 +564,7 @@ private:
 			_root = nd;
 		old->_left = NULL;
 		old->_right = NULL;
-		_nodeAllocator.destroy(old);
-		_nodeAllocator.deallocate(old, 1);
+		deleteNode(old);
 		return (nd);
 	}
 

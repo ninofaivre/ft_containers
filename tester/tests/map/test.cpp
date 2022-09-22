@@ -3,61 +3,35 @@
 #include <map>
 #include <iostream>
 #include <utility>
+#include <memory>
+
+template <class T_MAP, class T_IT>
+void	isEnd(const T_MAP &map, const T_IT &it)
+{ std::cout << (it == map.end() ? "it == end" : "cit != end") << std::endl; }
 
 int	main(void)
 {
-	/*
 	{
-		ft::map<std::string, std::string>	test;
-		test["paulo"] = "le bato";
-		test["nino"] = "le tablo";
-		ft::map<std::string, std::string>::iterator it = test.begin();
-		it++;
-		std::cout << (*it).first << std::endl;
-		it++;
-		it++;
-		it++;
-		it--;
-		it--;
-		it--;
-		it--;
-		std::cout << (*it).first << std::endl;
-		it--;
-		it--;
-		it--;
-		it--;
-		it++;
-		it++;
-		it++;
-		it++;
-		it++;
-		std::cout << (*it).first << std::endl;
+		NAMESPACE::map<int, int>	a;
+		NAMESPACE::map<int, int>::const_iterator	cit = a.end();
+		a[0] = 42;
+		isEnd(a, cit);
+		cit--;
+		isEnd(a, cit);
+		std::cout << cit->second << std::endl;
 	}
 	{
-		ft::map<int, int>	test;
-		test[42] = 42;
-		test[21] = 21;
-		ft::map<int, int>::iterator it = test.begin();
-		++it;
-		std::cout << (*it).second << std::endl;
+		NAMESPACE::map<int, int>	a;
+		NAMESPACE::map<int, int>::const_iterator	cit = a.end();
+		isEnd(a, cit);
+		a[0] = 42;
 	}
-	*/
 	{
-		ft::map<int, int>	test;
-		test.insert(ft::make_pair(42, 42));
-		test[42] = 42; 
-		test[21] = 21; 
-		std::cout << test[42] << " " << test[21] << std::endl;
-		ft::map<int, int>::iterator it = test.begin();
-		ft::map<int, int>::const_iterator cit = test.begin();
-		it++;
-		cit++;
-		it->second = 84;
-		std::cout << "pair(" << cit->first << ", " << cit->second << ")" << std::endl;
-		cit = it;
-		std::cout << test.size() << std::endl;
-		test.erase(test.begin(), test.end());
-		std::cout << test.size() << std::endl;
+		NAMESPACE::map<int, int>	a;
+		NAMESPACE::map<int, int>	b;
+		a[0] = 42;
+		b[0] = 42;
+		std::cout << (a == b ? "A identique à B" : "A différent de B") << std::endl;
 	}
 	return (0);
 }

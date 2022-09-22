@@ -62,6 +62,25 @@ namespace ft
 		typedef Category	iterator_category;
 	};
 
+
+	/*
+	template<class BidirIt>
+	BidirIt	advence(BidirIt it, typename std::iterator_traits<BidirIt>::difference_type n = 1)
+	{
+		while (n < 0)
+		{
+			it++;
+			n++;
+		}
+		while (n > 0)
+		{
+			it--;
+			n--;
+		}
+		return (it);
+	}
+	*/
+
 	template<class Iter>
 	class reverse_iterator : public ft::iterator<typename ft::iterator_traits<Iter>::iterator_category,
 												 typename ft::iterator_traits<Iter>::value_type,
@@ -75,8 +94,8 @@ namespace ft
 		typedef Iter	iterator_type;
 		typedef typename ft::iterator_traits<iterator_type>::iterator_category	iterator_category;
 		typedef typename ft::iterator_traits<iterator_type>::value_type			value_type;
-		typedef typename ft::iterator_traits<iterator_type>::difference_type		difference_type;
-		typedef typename ft::iterator_traits<iterator_type>::pointer				pointer;
+		typedef typename ft::iterator_traits<iterator_type>::difference_type	difference_type;
+		typedef typename ft::iterator_traits<iterator_type>::pointer			pointer;
 		typedef typename ft::iterator_traits<iterator_type>::reference			reference;
 
 
@@ -105,10 +124,13 @@ namespace ft
 		}
 
 		reference	operator*(void) const
-		{ return (*(_current.base() - 1)); }
+		{
+			iterator_type	tmp = _current;
+			return (*(--tmp));
+		}
 
 		pointer		operator->(void) const
-		{ return (_current.base() - 1); }
+		{ return (&(this->operator*())); }
 
 		reverse_iterator	&operator++(void)
 		{

@@ -167,7 +167,7 @@ namespace ft
 
 		// Capacity
 		bool	empty(void) const
-		{ return (_size == 0); }
+		{ return (!_size); }
 
 		size_type	size(void) const
 		{ return (_size); }
@@ -335,11 +335,7 @@ namespace ft
 
 	template<class T>
 	bool	operator==(const vector<T> &lhs, const vector<T> &rhs)
-	{
-		if (lhs.size() != rhs.size())
-			return (false);
-		return (ft::equal(lhs.begin(), lhs.end(), rhs.begin()));
-	}
+	{ return (lhs.size() == rhs.size() && ft::equal(lhs.begin(), lhs.end(), rhs.begin())); }
 
 	template<class T>
 	bool	operator!=(const vector<T> &lhs, const vector<T> &rhs)
