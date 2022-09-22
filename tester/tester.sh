@@ -1,6 +1,6 @@
 #!/bin/bash
 # utils #
-OK="\U2705"
+OK="${C_GREEN}\U2705${C_RESET}"
 KO="\U274C"
 
 C_RESET="\e[0m"

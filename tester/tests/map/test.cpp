@@ -5,33 +5,27 @@
 #include <utility>
 #include <memory>
 
-template <class T_MAP, class T_IT>
-void	isEnd(const T_MAP &map, const T_IT &it)
-{ std::cout << (it == map.end() ? "it == end" : "cit != end") << std::endl; }
-
 int	main(void)
 {
 	{
-		NAMESPACE::map<int, int>	a;
-		NAMESPACE::map<int, int>::const_iterator	cit = a.end();
-		a[0] = 42;
-		isEnd(a, cit);
-		cit--;
-		isEnd(a, cit);
-		std::cout << cit->second << std::endl;
+		NAMESPACE::map<int, int>	test;
+		NAMESPACE::map<int, int>::iterator it = test.begin();
+	//	test[0] = 42;
+		std::cout << it->second << std::endl;
 	}
+	/*
 	{
-		NAMESPACE::map<int, int>	a;
-		NAMESPACE::map<int, int>::const_iterator	cit = a.end();
-		isEnd(a, cit);
-		a[0] = 42;
+		NAMESPACE::map<int, int>	map_a, map_b;
+		map_b[0] = 36;
+		map_a[0] = 42;
+		map_a[1] = 21;
+		NAMESPACE::map<int, int>::iterator	it = map_a.begin();
+		std::cout << it->second << std::endl;
+		std::cout << "swap a, b" << std::endl;
+		map_a.swap(map_b);
+		std::cout << it->second << std::endl;
+		it++;
+		std::cout << it->second << std::endl;
 	}
-	{
-		NAMESPACE::map<int, int>	a;
-		NAMESPACE::map<int, int>	b;
-		a[0] = 42;
-		b[0] = 42;
-		std::cout << (a == b ? "A identique à B" : "A différent de B") << std::endl;
-	}
-	return (0);
+	*/
 }
