@@ -37,12 +37,14 @@ namespace ft
 		typedef typename allocator_type::difference_type		difference_type;
 
 		typedef value_type &		reference;
-		typedef typename allocator_type::pointer	pointer;
+		typedef const value_type &	const_reference;
+		typedef typename allocator_type::pointer		pointer;
+		typedef typename allocator_type::const_pointer	const_pointer;
 
 
 	private:
 
-		class value_compare// public binary_function<value_type, value_type, bool>
+		class value_compare : public std::binary_function<value_type, value_type, bool>
 		{
 			friend class set;
 		protected:
@@ -58,10 +60,10 @@ namespace ft
 
 	public:
 				
-		typedef typename rbt_type::iterator				iterator;
+		typedef typename rbt_type::const_iterator		iterator;
 		typedef typename rbt_type::const_iterator		const_iterator;
-		typedef ft::reverse_iterator<iterator>			reverse_iterator;
-		typedef ft::reverse_iterator<const_iterator>	const_reverse_iterator;
+		typedef ft::reverse_iterator< typename rbt_type::const_iterator >	reverse_iterator;
+		typedef ft::reverse_iterator< typename rbt_type::const_iterator >	const_reverse_iterator;
 
 
 	private:
@@ -98,9 +100,6 @@ namespace ft
 
 		key_compare	key_comp(void) const
 		{ return (_data.value_comp().comp); }
-
-		key_type	&operator[](const Key &key)
-		{ return ((this->insert(key).first)->second); }
 
 		key_type	&at(const key_type &key)
 		{
@@ -204,16 +203,16 @@ namespace ft
 		{ return (_data.getEnd()); }
 
 		reverse_iterator	rbegin(void)
-		{ return (_data.getEnd()); }
+		{ return (reverse_iterator (this->end())); }
 
 		const_reverse_iterator	rbegin(void) const
-		{ return (_data.getEnd()); }
+		{ return (const_reverse_iterator (this->end())); }
 
 		reverse_iterator	rend(void)
-		{ return (_data.getIt(_data.min())); }
+		{ return (reverse_iterator (this->begin())); }
 
 		const_reverse_iterator	rend(void) const
-		{ return (_data.getIt(_data.min())); }
+		{ return (const_reverse_iterator (this->begin())); }
 
 	};
 

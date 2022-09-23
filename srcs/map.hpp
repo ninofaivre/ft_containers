@@ -18,7 +18,6 @@
 # include "algorithm.hpp"
 # include <memory>
 # include <functional>
-# include <iostream>
 
 namespace ft
 {
@@ -37,14 +36,13 @@ namespace ft
 		typedef typename allocator_type::size_type				size_type;
 		typedef typename allocator_type::difference_type		difference_type;
 
-		typedef value_type &	reference;
+		typedef value_type &		reference;
+		typedef const value_type &	const_reference;
 
-		typedef typename allocator_type::pointer	pointer;
+		typedef typename allocator_type::pointer		pointer;
+		typedef typename allocator_type::const_pointer	const_pointer;
 
-
-	private:
-
-		class value_compare// public binary_function<value_type, value_type, bool>
+		class value_compare : public std::binary_function<value_type, value_type, bool>
 		{
 			friend class map;
 		protected:
@@ -54,6 +52,8 @@ namespace ft
 			bool	operator() (const value_type &a, const value_type &b) const
 			{ return (comp(a.first, b.first)); }
 		};
+
+	private:
 
 		typedef rbt<value_type, allocator_type, value_compare>	rbt_type;
 
@@ -210,16 +210,16 @@ namespace ft
 		{ return (_data.getEnd()); }
 
 		reverse_iterator	rbegin(void)
-		{ return (_data.getEnd()); }
+		{ return (reverse_iterator (this->end())); }
 
 		const_reverse_iterator	rbegin(void) const
-		{ return (_data.getEnd()); }
+		{ return (const_reverse_iterator (this->end())); }
 
 		reverse_iterator	rend(void)
-		{ return (_data.getIt(_data.min())); }
+		{ return (reverse_iterator (this->begin())); }
 
 		const_reverse_iterator	rend(void) const
-		{ return (_data.getIt(_data.min())); }
+		{ return (const_reverse_iterator (this->begin)); }
 
 	};
 

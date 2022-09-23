@@ -62,25 +62,6 @@ namespace ft
 		typedef Category	iterator_category;
 	};
 
-
-	/*
-	template<class BidirIt>
-	BidirIt	advence(BidirIt it, typename std::iterator_traits<BidirIt>::difference_type n = 1)
-	{
-		while (n < 0)
-		{
-			it++;
-			n++;
-		}
-		while (n > 0)
-		{
-			it--;
-			n--;
-		}
-		return (it);
-	}
-	*/
-
 	template<class Iter>
 	class reverse_iterator : public ft::iterator<typename ft::iterator_traits<Iter>::iterator_category,
 												 typename ft::iterator_traits<Iter>::value_type,
@@ -174,9 +155,12 @@ namespace ft
 		{ return (*(_current.base() - n - 1)); }
 
 	};
+}
 
-	typedef std::ptrdiff_t	difference_type;
+typedef std::ptrdiff_t	difference_type;
 
+namespace ft
+{
 	template<class L, class R>
 	bool	operator==(const ft::reverse_iterator<L> &lhs,
 					   const ft::reverse_iterator<R> &rhs)

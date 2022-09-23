@@ -20,11 +20,8 @@
 # include <functional>
 # include <limits>
 
-//enum { RED, BLACK };
 # define RED true
 # define BLACK false
-
-#include <iostream>
 
 template<class Data, class Alloc, class Comp>
 struct node
@@ -55,7 +52,6 @@ public:
 	node(Data d, node *father, Comp comp)
 	: _comp(comp), _color(RED), _father(father), _left(NULL), _right(NULL), _data(d) {}
 
-	//voir si peut être remplacé par operator '='
 	void	copy(node &otherInst, Alloc &alloc)
 	{
 		alloc.destroy(&_data);
@@ -162,6 +158,14 @@ private:
 	node_type	*_ptr;
 	node_type	*_lastValidPtr;
 	bool		_end;
+	
+	void	endCase(void) // useless dirty patch
+	{
+		_ptr = *_root;
+		while (_ptr && _ptr->_right)
+			_ptr = _ptr->_right;
+		_end = false;
+	}
 
 
 public:
@@ -193,9 +197,7 @@ public:
 	{ return (_ptr->getData()); }
 
 	pointer	operator->() const
-	{
-		return (&_ptr->getData());
-	}
+	{ return (&_ptr->getData()); }
 
 	rbtIterator	&operator++(void)
 	{
@@ -210,6 +212,7 @@ public:
 			next = _ptr->nextNode();
 			if (!next)
 			{
+				//update root
 				_end = true;
 				_lastValidPtr = _ptr;
 				_ptr++;
@@ -230,14 +233,6 @@ public:
 		rbtIterator	tmp = *this;
 		this->operator++();
 		return (tmp);
-	}
-
-	void	endCase(void)
-	{
-		_ptr = *_root;
-		while (_ptr && _ptr->_right)
-			_ptr = _ptr->_right;
-		_end = false;
 	}
 
 	rbtIterator	&operator--(void)
@@ -391,8 +386,9 @@ public:
 		}
 		*child = _nodeAllocator.allocate(1);
 		_nodeAllocator.construct(*child, node_type (d, parent, _comp)); 
+		parent = *child;
 		fixPush(*child);
-		return (*child);
+		return (parent);
 	}
 
 	bool	pop(Data d)
@@ -589,9 +585,7 @@ private:
 	{
 		_swapColor(_getNearNephew(parent, child, sibling), sibling);
 		rotate(_getNearNephew(parent, child, sibling), sibling);
-		// child : sibling->_father->_getBrother()
-		//siblingBlackFarNephewRed(sibling->_father->_father, sibling->_father, _getFarNephew(sibling->_father->_father, sibling->_father->_getBrother(), sibling->_father));
-		siblingBlackFarNephewRed(parent, sibling->_father, _getFarNephew(parent, child, sibling->_father)); // doute tester si fonctionnel
+		siblingBlackFarNephewRed(parent, sibling->_father, _getFarNephew(parent, child, sibling->_father));
 	}
 
 	void	siblingBlackFarNephewRed(node_type *parent, node_type *sibling, node_type *farNephew)
