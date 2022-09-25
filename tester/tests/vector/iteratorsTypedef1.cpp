@@ -18,4 +18,5 @@ int	main(void)
 	std::cout << i << std::endl;
 	std::cout << *ptr << std::endl;
 	std::cout << inherit << std::endl;
+	return (1);
 }

@@ -40,4 +40,5 @@ int	main(void)
 		NAMESPACE::vector<int> test(100, 5);
 		printVec(test, 100, "test");
 	}
+	return (4);
 }
