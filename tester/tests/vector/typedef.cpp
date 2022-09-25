@@ -40,5 +40,5 @@ int	main(void)
 		tested_type::const_pointer		test_const_pointer_type = &test_value_type;
 		std::cout << *test_const_pointer_type << std::endl;
 	}
-	return (5);
+	return (0);
 }

@@ -25,5 +25,5 @@ int	main(void)
 	printMaxSize(NAMESPACE::vector<std::string> (), "std::string");
 	printMaxSize(NAMESPACE::vector<testClass> (), "testClass");
 	printMaxSize(NAMESPACE::vector<long long int> (), "long long int");
-	return (3);
+	return (0);
 }
