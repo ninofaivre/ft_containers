@@ -96,14 +96,18 @@ function pres() #subtestname #F[rawData] #S[rawData] #only_comp
 function presTime()
 {
 	#echo -n "$1|$2"
-	stdTime=$(echo $1 | awk -F'[.ms]' '{ print $3 }' | sed -e 's/00//')
-	ftTime=$(echo $2 | awk -F'[.ms]' '{ print $3 }' | sed -e 's/00//')
-	diff=$((stdTime-ftTime))
-	if (( "$diff" <= "2" )) && (( "$diff" >= "-2" )); then
-		stdTime="$ftTime"
+	stdTime=$(echo $1 | awk -F'[.ms]' '{ printf("%d"), $3 }')
+	ftTime=$(echo $2 | awk -F'[.ms]' '{ printf("%d"), $3 }')
+	diff=$((ftTime-stdTime))
+	if ((diff < 0)); then
+		note=100
+	elif ((diff < 5)); then
+		note=100
+	else
+		note=$(echo | awk -v ft=$ftTime -v std=$stdTime '{ printf("%3d"), 100-(ft/std*5) }')
+		if ((note < 0)) ; then note="  0"; fi
 	fi
-	echo -n "Time" $(echo | awk -v ft=$ftTime -v std=$stdTime '{ print ft/std*100-100 "%" }')"	|"
-	#echo -n $(( ((ftTime / stdTime) * 100) + (ftTime % stdTime) -100 ))"%"
+	echo -n "perf" "$note/100|"
 }
 
 TESTS=()

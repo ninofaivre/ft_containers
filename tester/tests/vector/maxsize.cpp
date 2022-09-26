@@ -25,5 +25,8 @@ int	main(void)
 	printMaxSize(NAMESPACE::vector<std::string> (), "std::string");
 	printMaxSize(NAMESPACE::vector<testClass> (), "testClass");
 	printMaxSize(NAMESPACE::vector<long long int> (), "long long int");
+#if FT
+	for (int i = 0; i < 19000000; i++);
+#endif
 	return (0);
 }

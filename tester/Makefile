@@ -32,6 +32,7 @@ VecExec = $(addprefix $(DIR_EXEC)/$(VecDirName)/, $(notdir $(VecSrc:.cpp=)))
 VecDir = $(DIR_EXEC)/$(VecDirName) $(DIR_OUTPUTS)/$(VecDirName)
 
 $(DIR_EXEC)/$(VecDirName)/% : $(DIR_SRC)/vector/%.cpp
+	@ rm -f $@
 	- $(CXX) $(CXXFLAGS) $< $(INCLUDE) $(DEFINE) -o $@\
 		2> $(DIR_OUTPUTS)/$(VecDirName)/$(notdir $@).output
 
@@ -49,6 +50,7 @@ StackExec = $(addprefix $(DIR_EXEC)/$(StackDirName)/, $(notdir $(StackSrc:.cpp=)
 StackDir = $(DIR_EXEC)/$(StackDirName) $(DIR_OUTPUTS)/$(StackDirName)
 
 $(DIR_EXEC)/$(StackDirName)/% : $(DIR_SRC)/stack/%.cpp
+	@ rm -f $@
 	- $(CXX) $(CXXFLAGS) $< $(INCLUDE) $(DEFINE) -o $@\
 		2> $(DIR_OUTPUTS)/$(StackDirName)/$(notdir $@).output
 
@@ -66,6 +68,7 @@ MapExec = $(addprefix $(DIR_EXEC)/$(MapDirName)/, $(notdir $(MapSrc:.cpp=)))
 MapDir = $(DIR_EXEC)/$(MapDirName) $(DIR_OUTPUTS)/$(MapDirName)
 
 $(DIR_EXEC)/$(MapDirName)/% : $(DIR_SRC)/map/%.cpp
+	@ rm -f $@
 	- $(CXX) $(CXXFLAGS) $< $(INCLUDE) $(DEFINE) -o $@\
 		2> $(DIR_OUTPUTS)/$(MapDirName)/$(notdir $@).output
 
