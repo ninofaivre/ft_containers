@@ -4,11 +4,13 @@ C_RESET="\e[0m"
 C_PURPLE="\e[94m"
 C_RED="\e[91m"
 C_GREEN="\e[92m"
+C_YELLOW="\e[93m"
 
 S_RESET="\033[0m"
 S_BOLD="\033[1m"
 
 OK="${S_BOLD}${C_GREEN}\U2713${C_RESET}${S_RESET}"
+MOK="${S_BOLD}${C_YELLOW}\U2713${C_RESET}${S_RESET}"
 KO="${C_RED}\U2620${C_RESET}"
 # utils #
 # config #
@@ -107,7 +109,15 @@ function presTime()
 		note=$(echo | awk -v ft=$ftTime -v std=$stdTime '{ printf("%3d"), 100-(ft/std*5) }')
 		if ((note < 0)) ; then note="  0"; fi
 	fi
-	echo -n "perf" "$note/100|"
+	echo -n "perf"
+	if ((note == 0)); then
+		echo -n -e "${KO}${C_RED}"
+	elif ((note < 50)); then
+		echo -n -e "${MOK}${C_YELLOW}"
+	else
+		echo -n -e "${OK}${C_GREEN}"
+	fi
+	echo -n -e "$note${C_RESET}/100|"
 }
 
 TESTS=()
