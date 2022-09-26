@@ -120,7 +120,7 @@ FT_TIMES=()
 
 function	OneTest()
 {
-	if [ "$(test -f ./.exec/std_"$2"/"$1" && echo Y || echo N)" = "N" ]; then
+	if [ "$(test -f ./.exec/std_$2/$1 && echo Y || echo N)" = "N" ]; then
 		STD_PIDS+=("none")
 		STD_COMPILS+=("N")
 	else
@@ -128,7 +128,7 @@ function	OneTest()
 		({ time timeout "$ExecTimeOut" ./.exec/std_"$2"/"$1" >./outputs/std_"$2"/"$1".output 2>&1; } > ./outputs/std_"$2"/"$1".time 2>&1) &
 		STD_PIDS+=("$!")
 	fi
-	if [ "$(test -f ./.exec/ft_"$2"/"$1" && echo Y || echo N)" = "N" ]; then
+	if [ "$(test -f ./.exec/ft_$2/$1 && echo Y || echo N)" = "N" ]; then
 		FT_PIDS+=("none")
 		FT_COMPILS+=("N")
 	else
