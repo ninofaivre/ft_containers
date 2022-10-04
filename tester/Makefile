@@ -101,7 +101,8 @@ fclean: clean
 	rm -rf $(DIR_EXEC)
 	rm -rf $(DIR_OUTPUTS)
 
-re: clean all
+re: clean
+	@ $(MAKE) # to keep -j working with re (might produce unwanted results for strange make request)
 
 .PHONY: all vector stack map softClean clean fclean re
 

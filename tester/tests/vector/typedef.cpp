@@ -21,7 +21,7 @@ struct customAllocator : public std::allocator<T> //fail if get reference and cr
 int	main(void)
 {
 	{
-		typedef typename NAMESPACE::vector< int, customAllocator<int> >	tested_type;
+		typedef NAMESPACE::vector< int, customAllocator<int> >	tested_type;
 
 		tested_type::value_type			test_value_type = 42;
 		std::cout << test_value_type << std::endl;

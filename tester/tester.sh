@@ -14,19 +14,21 @@ OK="${S_BOLD}${C_GREEN}\U2713${C_RESET}${S_RESET}"
 MOK="${S_BOLD}${C_YELLOW}\U2713${C_RESET}${S_RESET}"
 KO="${C_RED}\U2620${C_RESET}"
 # utils #
+
+if [ -f ".env" ]; then export "$(grep -v "^#" < .env | xargs)" &>/dev/null; fi
+
 # config #
-CCTimeOut=60
+if [[ ! -v CCTimeOut ]]; then CCTimeOut=60; fi
+if [[ ! -v maxTestNameLength ]]; then maxTestNameLength=20; fi
+if [[ ! -v ExecTimeOut ]]; then ExecTimeOut=4; fi
+if [[ ! -v make_j ]]; then make_j=$(nproc); fi
 
-ExecTimeOut=2
-maxTestNameLength=20
-
-valgrindOptions=("--track-origins=yes" "-s")
 makeArgs=()
+
 # config #
 function	DisplayHelp()
 {
 	echo "help : working on it..."
-	exit 0
 }
 
 function	InvalidArg()
@@ -41,6 +43,10 @@ for arg in "$@"; do
 		case "${arg%=*}" in
 			"DIR_CONTAINERS")
 				makeArgs+=("$arg");;
+			"CXX")
+				makeArgs+=("$arg");;
+			"CXXFLAGS")
+				makeArgs+=("$arg");;
 			"CCTimeOut")
 				CCTimeOut=${arg#*=};;
 			"ExecTimeOut")
@@ -54,7 +60,10 @@ for arg in "$@"; do
 	fi
 	case "$arg" in
 		"-h" | "--help")
-			DisplayHelp;;
+			DisplayHelp;
+			exit 0;;
+		"-j"*)
+			make_j="${arg#*j}";;
 		"softClean" | "fclean" | "clean")
 			makeArgs+=("$arg");;
 		"re" | "all")
@@ -65,16 +74,18 @@ for arg in "$@"; do
 			InvalidArg "$arg";;
 	esac
 done
+
 if [ "${#makeArgs}" = "0" ]; then
 	makeArgs+=("all")
 fi
+
 # parse #
 function	compil()
 {
 	make softClean namespace="$1" &>/dev/null
-	echo -n ${1^^}
+	echo -n "${1^^}"
 	if [ "$1" = "ft" ]; then echo -n " "; fi
-	if ! t=$( { time timeout "$CCTimeOut" make ${makeArgs[@]} namespace="$1" &>/dev/null; } 2>&1); then
+	if ! t="$( { time timeout "$CCTimeOut" make "${makeArgs[@]}" -j"$make_j" namespace="$1" &>/dev/null; } 2>&1)"; then
 		if (echo "$t" | grep -c "Terminated" >/dev/null); then
 			echo -e " Make ${C_RED}failed${C_RESET} !(Timed out)"
 		else
@@ -88,7 +99,7 @@ function	compil()
 
 function pres() #subtestname #F[rawData] #S[rawData] #only_comp
 {
-	compRes=$(if [ "$2" = "$3" ] ; then echo ${OK}; else echo ${KO}; fi)
+	compRes=$(if [ "$2" = "$3" ] ; then echo "${OK}"; else echo "${KO}"; fi)
 		echo -e -n "$1$compRes"
 	if [ "$4" != "compact" ]; then
 		echo -e -n " F[$2] S[$3]"
@@ -98,7 +109,6 @@ function pres() #subtestname #F[rawData] #S[rawData] #only_comp
 
 function presTime()
 {
-	#echo -n "$1|$2"
 	stdTime=$(awk -F'[.ms]' '{ printf("%d"), $3 }' <<< "$1")
 	ftTime=$(awk -F'[.ms]' '{ printf("%d"), $3 }' <<< "$2")
 	diff=$((ftTime-stdTime))
@@ -107,7 +117,7 @@ function presTime()
 	elif ((diff < 5)); then
 		note=100
 	else
-		note=$(awk -v ft=$ftTime -v std=$stdTime '{ printf("%3d"), 100-(ft/std*5) }' <<< "")
+		note=$(awk -v ft="$ftTime" -v std="$stdTime" '{ printf("%3d"), 100-(ft/std*5) }' <<< "")
 		if ((note < 0)) ; then note="  0"; fi
 	fi
 	echo -n "perf"
@@ -135,7 +145,8 @@ FT_TIMES=()
 
 function	OneTest()
 {
-	if !(test -f ./.exec/std_$2/$1); then
+	#if !(test -f ./.exec/std_$2/$1); then
+	if [[ ! -f "./.exec/std_$2/$1" ]]; then
 		STD_PIDS+=("none")
 		STD_COMPILS+=("N")
 	else
@@ -143,7 +154,7 @@ function	OneTest()
 		({ time timeout "$ExecTimeOut" ./.exec/std_"$2"/"$1" &>./outputs/std_"$2"/"$1".output; } 2>./outputs/std_"$2"/"$1".time) &
 		STD_PIDS+=("$!")
 	fi
-	if !(test -f ./.exec/ft_$2/$1) ; then
+	if [[ ! -f "./.exec/ft_$2/$1" ]]; then
 		FT_PIDS+=("none")
 		FT_COMPILS+=("N")
 	else
@@ -169,32 +180,32 @@ function	exe()
 	FT_TIMES=()
 
 	for name in $(basename -a -s .cpp ./tests/"$1"/*.cpp); do TESTS+=("$name"); done
-	for name in ${TESTS[@]}; do
+	for name in "${TESTS[@]}"; do
 		OneTest "$name" "$1"
 	done
-	for i in ${!TESTS[@]}; do
+	for i in "${!TESTS[@]}"; do
 		pid="${STD_PIDS[${i}]}"
-		timepath="./outputs/std_"$1"/${TESTS[${i}]}.time"
+		timepath="./outputs/std_${1}/${TESTS[${i}]}.time"
 		if [ "$pid" = "none" ]; then
 			STD_RETURNS+=("none")
 			STD_TIMES+=("none")
 		else
-			wait "$pid"; STD_RETURNS+=("$?"); STD_TIMES+=("$(cat $timepath | awk 'NR==2 { print $2 }')"); rm "$timepath"
+			wait "$pid"; STD_RETURNS+=("$?"); STD_TIMES+=("$(awk 'NR==2 { print $2 }' < "$timepath")"); rm "$timepath"
 		fi
 		pid="${FT_PIDS[${i}]}"
-		timepath="./outputs/ft_"$1"/${TESTS[${i}]}.time"
+		timepath="./outputs/ft_${1}/${TESTS[${i}]}.time"
 		if [ "$pid" = "none" ]; then
 			FT_RETURNS+=("none")
 			FT_TIMES+=("none")
 		else
-			wait "$pid"; FT_RETURNS+=("$?"); FT_TIMES+=("$(cat $timepath | awk 'NR==2 { print $2 }')"); rm "$timepath"
+			wait "$pid"; FT_RETURNS+=("$?"); FT_TIMES+=("$(awk 'NR==2 { print $2 }' < "$timepath")"); rm "$timepath"
 		fi
 	done
 }
 
 function	displayTest() #testID #ContainerName
 {
-	if ([ "${FT_COMPILS[${1}]}" = "Y" ] && [ "${STD_COMPILS[${1}]}" = "Y" ]); then
+	if [ "${FT_COMPILS[${1}]}" = "Y" ] && [ "${STD_COMPILS[${1}]}" = "Y" ]; then
 		cmp ./outputs/std_"$2"/"${TESTS[${1}]}".output ./outputs/ft_"$2"/"${TESTS[${1}]}".output &>/dev/null; diffOutput=$?
 	fi
 	awk -v name="${TESTS[${1}]}" -v maxNameLen="$maxTestNameLength"\
@@ -209,13 +220,13 @@ function	displayTest() #testID #ContainerName
 		echo -e "${C_RED}FT Timed Out ${C_RESET}"
 		return ;
 	fi
-	if ([ "${FT_COMPILS[${1}]}" = "N" ] && [ "${STD_COMPILS[${1}]}" = "Y" ]); then
+	if [ "${FT_COMPILS[${1}]}" = "N" ] && [ "${STD_COMPILS[${1}]}" = "Y" ]; then
 		echo -e "${C_RED} FT shall CC ${C_RESET}"
 		return ;
-	elif ([ "${FT_COMPILS[${1}]}" = "Y" ] && [ "${STD_COMPILS[${1}]}" = "N" ]); then
+	elif [ "${FT_COMPILS[${1}]}" = "Y" ] && [ "${STD_COMPILS[${1}]}" = "N" ]; then
 		echo -e "${C_RED}FT shallnt CC${C_RESET}"
 		return ;
-	elif ([ "${FT_COMPILS[${1}]}" = "N" ] && [ "${STD_COMPILS[${1}]}" = "N" ]); then
+	elif [ "${FT_COMPILS[${1}]}" = "N" ] && [ "${STD_COMPILS[${1}]}" = "N" ]; then
 		echo -e "${C_GREEN}CC fail test${C_RESET}"
 		return ;
 	fi
@@ -229,14 +240,14 @@ function	oneContainer()
 {
 	if [ "$(ls ./tests/"$1"/*.cpp 2>/dev/null)" == "" ]; then
 		return ;
-	elif ([[ "${makeArgs[@]}" != *"all"* ]] && [[ "${makeArgs[@]}" != *"re"* ]] && [[ "${makeArgs[@]}" != *"$1"* ]]); then
+	elif [[ "${makeArgs[*]}" != *"all"* ]] && [[ "${makeArgs[*]}" != *"re"* ]] && [[ "${makeArgs[*]}" != *"$1"* ]]; then
 		return ;
 	fi
 	exe "$1"
 	echo
 	echo -e "TEST OF" "${C_PURPLE}${1^^}${C_RESET}" ":"
 	echo
-	for i in ${!TESTS[@]}; do
+	for i in "${!TESTS[@]}"; do
 		displayTest "$i" "$1"
 	done
 }
